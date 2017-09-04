@@ -33,12 +33,12 @@ init =
 
 
 type alias Model =
-    {}
+    { game : Game.Game }
 
 
 initialModel : Model
 initialModel =
-    {}
+    { game = Game.initialGame }
 
 
 
@@ -88,4 +88,4 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ Game.view ]
+        [ Game.view model.game ]
