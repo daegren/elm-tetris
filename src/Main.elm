@@ -4,6 +4,8 @@ import AnimationFrame
 import Game
 import Html exposing (..)
 import Html.CssHelpers
+import Input
+import Keyboard
 import MainStyles
 import Time
 
@@ -33,12 +35,16 @@ init =
 
 
 type alias Model =
-    { game : Game.Game }
+    { game : Game.Game
+    , input : Input.Input
+    }
 
 
 initialModel : Model
 initialModel =
-    { game = Game.initialGame }
+    { game = Game.initialGame
+    , input = Input.defaultInput
+    }
 
 
 
@@ -47,7 +53,11 @@ initialModel =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    AnimationFrame.diffs Tick
+    Sub.batch
+        [ AnimationFrame.diffs Tick
+        , Keyboard.downs KeyDown
+        , Keyboard.ups KeyUp
+        ]
 
 
 
@@ -57,6 +67,8 @@ subscriptions model =
 type Msg
     = NoOp
     | Tick Time.Time
+    | KeyDown Keyboard.KeyCode
+    | KeyUp Keyboard.KeyCode
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -67,6 +79,43 @@ update msg model =
 
         Tick time ->
             ( { model | game = Game.tickGame time model.game }, Cmd.none )
+
+        KeyDown key ->
+            let
+                input =
+                    Maybe.map (Input.handleKeyDown model.input) (mapKey key)
+            in
+            case input of
+                Just i ->
+                    ( { model | input = i }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        KeyUp key ->
+            let
+                input =
+                    Maybe.map (Input.handleKeyUp model.input) (mapKey key)
+            in
+            case input of
+                Just i ->
+                    ( { model | input = i }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+
+mapKey : Keyboard.KeyCode -> Maybe Input.Key
+mapKey keyCode =
+    case keyCode of
+        37 ->
+            Just Input.Left
+
+        39 ->
+            Just Input.Right
+
+        _ ->
+            Nothing
 
 
 
