@@ -66,10 +66,6 @@ update msg model =
             ( model, Cmd.none )
 
         Tick time ->
-            let
-                _ =
-                    Debug.log "Tick" time
-            in
             ( { model | game = Game.tickGame time model.game }, Cmd.none )
 
 
