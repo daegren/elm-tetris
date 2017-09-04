@@ -83,16 +83,26 @@ tickCurrent : Tetromino -> Tetromino
 tickCurrent tetromino =
     let
         position =
-            tetromino.position
-                |> Tuple.mapSecond
-                    (\y ->
-                        if y > -10 then
-                            y - 1
-                        else
-                            y
-                    )
+            if canMoveLower tetromino then
+                tetromino.position
+                    |> Tuple.mapSecond (\y -> y - 1)
+            else
+                tetromino.position
     in
     { tetromino | position = position }
+
+
+canMoveLower : Tetromino -> Bool
+canMoveLower tetromino =
+    let
+        cells =
+            cellsForShape tetromino.shape
+
+        ( posX, posY ) =
+            tetromino.position
+    in
+    List.map (\( x, y ) -> ( x + posX, y + posY )) cells
+        |> List.any (\( x, y ) -> y > -9)
 
 
 
