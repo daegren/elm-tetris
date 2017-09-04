@@ -70,7 +70,7 @@ update msg model =
                 _ =
                     Debug.log "Tick" time
             in
-            ( model, Cmd.none )
+            ( { model | game = Game.tickGame time model.game }, Cmd.none )
 
 
 

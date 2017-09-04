@@ -11,7 +11,8 @@ import Html exposing (Html)
 
 type alias Game =
     { current : Tetromino
-    , level : Int
+    , level : Level
+    , interval : Float
     }
 
 
@@ -19,6 +20,10 @@ type alias Tetromino =
     { shape : Shape
     , position : ( Int, Int )
     }
+
+
+type alias Level =
+    Int
 
 
 type Shape
@@ -32,6 +37,7 @@ initialGame =
         , position = ( -1, 9 )
         }
     , level = 1
+    , interval = 0
     }
 
 
@@ -39,9 +45,40 @@ initialGame =
 -- UPDATE
 
 
+speedForLevel : Level -> Float
+speedForLevel level =
+    1000
+
+
 tickGame : Float -> Game -> Game
 tickGame delta game =
-    game
+    let
+        currentInterval =
+            game.interval + delta
+
+        ( current, interval ) =
+            if currentInterval > speedForLevel game.level then
+                ( tickCurrent game.current, currentInterval - speedForLevel game.level )
+            else
+                ( game.current, currentInterval )
+    in
+    { game | interval = interval, current = current }
+
+
+tickCurrent : Tetromino -> Tetromino
+tickCurrent tetromino =
+    let
+        position =
+            tetromino.position
+                |> Tuple.mapSecond
+                    (\y ->
+                        if y > -10 then
+                            y - 1
+                        else
+                            y
+                    )
+    in
+    { tetromino | position = position }
 
 
 
