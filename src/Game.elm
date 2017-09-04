@@ -41,6 +41,20 @@ initialGame =
     }
 
 
+cellsForShape : Shape -> List ( Int, Int )
+cellsForShape shape =
+    case shape of
+        Circle ->
+            [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
+
+
+colorForShape : Shape -> Color.Color
+colorForShape shape =
+    case shape of
+        Circle ->
+            Color.rgb 255 255 0
+
+
 
 -- UPDATE
 
@@ -136,6 +150,17 @@ currentView game =
 
 tetrominoCell : Tetromino -> Collage.Form
 tetrominoCell tetromino =
+    cellsForShape tetromino.shape
+        |> List.map
+            (\( x, y ) ->
+                cell (colorForShape tetromino.shape)
+                    |> Collage.move ( cellSize * toFloat x, cellSize * toFloat y )
+            )
+        |> Collage.group
+
+
+cell : Color.Color -> Collage.Form
+cell cellColor =
     let
         half =
             cellSize / 2
@@ -145,7 +170,7 @@ tetrominoCell tetromino =
     in
     Collage.group
         [ Collage.rect cellSize cellSize
-            |> Collage.filled (Color.rgb 255 255 0)
+            |> Collage.filled cellColor
         , Collage.polygon [ ( -half, -half ), ( -half, half ), ( half, half ), ( half - embossWidth, half - embossWidth ), ( -half + embossWidth, half - embossWidth ), ( -half + embossWidth, -half + embossWidth ) ]
             |> Collage.filled (Color.rgba 255 255 255 0.5)
         , Collage.polygon [ ( -half, -half ), ( half, -half ), ( half, half ), ( half - embossWidth, half - embossWidth ), ( half - embossWidth, -half + embossWidth ), ( -half + embossWidth, -half + embossWidth ) ]
