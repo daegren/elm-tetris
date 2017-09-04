@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import AnimationFrame
+import Game
 import Html exposing (..)
 import Html.CssHelpers
 import MainStyles
@@ -87,4 +88,4 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ text "Hello, Elm!" ]
+        [ Game.view ]
