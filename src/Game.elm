@@ -130,6 +130,30 @@ currentView game =
         y =
             toFloat (posY * cellSize) + (cellSize / 2)
     in
-    Collage.rect cellSize cellSize
-        |> Collage.filled (Color.rgb 255 255 0)
+    tetrominoCell game.current
         |> Collage.move ( x, y )
+
+
+tetrominoCell : Tetromino -> Collage.Form
+tetrominoCell tetromino =
+    let
+        half =
+            cellSize / 2
+
+        embossWidth =
+            cellSize * 0.125
+    in
+    Collage.group
+        [ Collage.rect cellSize cellSize
+            |> Collage.filled (Color.rgb 255 255 0)
+        , Collage.polygon [ ( -half, -half ), ( -half, half ), ( half, half ), ( half - embossWidth, half - embossWidth ), ( -half + embossWidth, half - embossWidth ), ( -half + embossWidth, -half + embossWidth ) ]
+            |> Collage.filled (Color.rgba 255 255 255 0.5)
+        , Collage.polygon [ ( -half, -half ), ( half, -half ), ( half, half ), ( half - embossWidth, half - embossWidth ), ( half - embossWidth, -half + embossWidth ), ( -half + embossWidth, -half + embossWidth ) ]
+            |> Collage.filled (Color.rgba 0 0 0 0.5)
+        , Collage.segment ( -half, half ) ( -half + embossWidth, half - embossWidth )
+            |> Collage.traced (Collage.solid (Color.rgba 0 0 0 0.125))
+        , Collage.segment ( half, -half ) ( half - embossWidth, -half + embossWidth )
+            |> Collage.traced (Collage.solid (Color.rgba 255 255 255 0.125))
+        , Collage.path [ ( -half + embossWidth, -half + embossWidth ), ( -half + embossWidth, half - embossWidth ), ( half - embossWidth, half - embossWidth ), ( half - embossWidth, -half + embossWidth ) ]
+            |> Collage.traced (Collage.solid (Color.rgba 0 0 0 0.125))
+        ]
