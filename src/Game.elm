@@ -120,7 +120,6 @@ canMoveLeft tetromino =
     in
     List.map (\c -> add c tetromino.position) cells
         |> List.map (add ( -1, 0 ))
-        |> Debug.log "Can Move Left cells"
         |> List.any (\( x, _ ) -> x > -4)
 
 
@@ -132,7 +131,6 @@ canMoveRight tetromino =
     in
     List.map (\c -> add c tetromino.position) cells
         |> List.map (add ( 1, 0 ))
-        |> Debug.log "Can Move Right cells"
         |> List.any (\( x, _ ) -> x < 3)
 
 
