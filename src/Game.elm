@@ -41,7 +41,7 @@ initialGame =
         { shape = T
         , position = ( -1, 9 )
         }
-    , nextPiece = T
+    , nextPiece = Circle
     , level = 1
     , interval = 0
     }
@@ -182,16 +182,25 @@ view game =
 
 
 nextPieceView : Game -> Html msg
-nextPieceView game =
+nextPieceView { nextPiece } =
     let
         size =
             5 * cellSize
+
+        offset =
+            case nextPiece of
+                Circle ->
+                    ( -cellSize / 2, cellSize / 2 )
+
+                T ->
+                    ( 0, 0 )
     in
     Element.toHtml <|
         Collage.collage size
             size
             [ backgroundView size size
-            , tetrominoCell game.nextPiece
+            , tetrominoCell nextPiece
+                |> Collage.move offset
             ]
 
 
