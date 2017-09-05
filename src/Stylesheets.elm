@@ -1,6 +1,7 @@
 port module Stylesheets exposing (..)
 
 import Css.File exposing (..)
+import GameStyles
 import MainStyles
 
 
@@ -13,6 +14,7 @@ cssFiles =
         [ ( "styles.css"
           , compile
                 [ MainStyles.css
+                , GameStyles.css
                 ]
           )
         ]

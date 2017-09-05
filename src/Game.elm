@@ -3,7 +3,9 @@ module Game exposing (..)
 import Collage
 import Color
 import Element
-import Html exposing (Html)
+import GameStyles
+import Html exposing (Html, div)
+import Html.CssHelpers
 import Input
 
 
@@ -12,6 +14,7 @@ import Input
 
 type alias Game =
     { current : Tetromino
+    , nextPiece : Shape
     , level : Level
     , interval : Float
     }
@@ -38,6 +41,7 @@ initialGame =
         { shape = T
         , position = ( -1, 9 )
         }
+    , nextPiece = T
     , level = 1
     , interval = 0
     }
@@ -158,11 +162,41 @@ canMoveLower tetromino =
 
 
 
+-- CSS HELEPERS
+
+
+{ id, class, classList } =
+    Html.CssHelpers.withNamespace GameStyles.ns
+
+
+
 -- VIEW
 
 
 view : Game -> Html msg
 view game =
+    div [ id [ GameStyles.GameContainer ] ]
+        [ nextPieceView game
+        , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+nextPieceView : Game -> Html msg
+nextPieceView game =
+    let
+        size =
+            5 * cellSize
+    in
+    Element.toHtml <|
+        Collage.collage size
+            size
+            [ backgroundView size size
+            , tetrominoCell game.nextPiece
+            ]
+
+
+playField : Game -> Html msg
+playField game =
     let
         height =
             20 * cellSize
@@ -174,7 +208,7 @@ view game =
         Collage.collage width
             height
             [ backgroundView width height
-            , currentView game
+            , currentView game.current
             ]
 
 
@@ -194,11 +228,11 @@ backgroundView width height =
         |> Collage.filled backgroundColor
 
 
-currentView : Game -> Collage.Form
-currentView game =
+currentView : Tetromino -> Collage.Form
+currentView current =
     let
         ( posX, posY ) =
-            game.current.position
+            current.position
 
         x =
             toFloat (posX * cellSize) + (cellSize / 2)
@@ -206,16 +240,16 @@ currentView game =
         y =
             toFloat (posY * cellSize) + (cellSize / 2)
     in
-    tetrominoCell game.current
+    tetrominoCell current.shape
         |> Collage.move ( x, y )
 
 
-tetrominoCell : Tetromino -> Collage.Form
-tetrominoCell tetromino =
-    cellsForShape tetromino.shape
+tetrominoCell : Shape -> Collage.Form
+tetrominoCell shape =
+    cellsForShape shape
         |> List.map
             (\( x, y ) ->
-                cell (colorForShape tetromino.shape)
+                cell (colorForShape shape)
                     |> Collage.move ( cellSize * toFloat x, cellSize * toFloat y )
             )
         |> Collage.group
