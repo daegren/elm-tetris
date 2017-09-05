@@ -101,7 +101,13 @@ tickCurrent delta game =
 
         ( current, interval ) =
             if currentInterval > speedForLevel game.level then
-                ( moveDown game.current, currentInterval - speedForLevel game.level )
+                ( if canMoveLower game.current then
+                    moveDown game.current
+                  else
+                    -- TODO: Handle that the piece has settled
+                    game.current
+                , currentInterval - speedForLevel game.level
+                )
             else
                 ( game.current, currentInterval )
     in
@@ -110,15 +116,7 @@ tickCurrent delta game =
 
 moveDown : Tetromino -> Tetromino
 moveDown tetromino =
-    let
-        position =
-            if canMoveLower tetromino then
-                tetromino.position
-                    |> Tuple.mapSecond (\y -> y - 1)
-            else
-                tetromino.position
-    in
-    { tetromino | position = position }
+    { tetromino | position = Tuple.mapSecond (\y -> y - 1) tetromino.position }
 
 
 processInput : Tetromino -> List Input.Key -> Tetromino
