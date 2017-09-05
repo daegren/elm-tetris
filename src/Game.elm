@@ -87,13 +87,38 @@ tickGame delta keys game =
         currentInterval =
             game.interval + delta
 
+        newGame =
+            tickCurrent delta game
+    in
+    { newGame | current = processInput newGame.current keys }
+
+
+tickCurrent : Float -> Game -> Game
+tickCurrent delta game =
+    let
+        currentInterval =
+            game.interval + delta
+
         ( current, interval ) =
             if currentInterval > speedForLevel game.level then
-                ( tickCurrent game.current, currentInterval - speedForLevel game.level )
+                ( moveDown game.current, currentInterval - speedForLevel game.level )
             else
                 ( game.current, currentInterval )
     in
-    { game | interval = interval, current = processInput current keys }
+    { game | interval = interval, current = current }
+
+
+moveDown : Tetromino -> Tetromino
+moveDown tetromino =
+    let
+        position =
+            if canMoveLower tetromino then
+                tetromino.position
+                    |> Tuple.mapSecond (\y -> y - 1)
+            else
+                tetromino.position
+    in
+    { tetromino | position = position }
 
 
 processInput : Tetromino -> List Input.Key -> Tetromino
@@ -136,19 +161,6 @@ canMoveRight tetromino =
     List.map (\c -> add c tetromino.position) cells
         |> List.map (add ( 1, 0 ))
         |> List.any (\( x, _ ) -> x < 3)
-
-
-tickCurrent : Tetromino -> Tetromino
-tickCurrent tetromino =
-    let
-        position =
-            if canMoveLower tetromino then
-                tetromino.position
-                    |> Tuple.mapSecond (\y -> y - 1)
-            else
-                tetromino.position
-    in
-    { tetromino | position = position }
 
 
 canMoveLower : Tetromino -> Bool
