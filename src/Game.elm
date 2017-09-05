@@ -15,6 +15,7 @@ import Input
 type alias Game =
     { current : Tetromino
     , nextPiece : Shape
+    , cells : List Cell
     , level : Level
     , interval : Float
     }
@@ -22,7 +23,7 @@ type alias Game =
 
 type alias Tetromino =
     { shape : Shape
-    , position : ( Int, Int )
+    , position : Point
     }
 
 
@@ -35,19 +36,35 @@ type Shape
     | T
 
 
+type alias Point =
+    ( Int, Int )
+
+
+type alias Cell =
+    { color : Color.Color
+    , position : Point
+    }
+
+
 initialGame : Game
 initialGame =
     { current =
         { shape = T
-        , position = ( -1, 9 )
+        , position = spawnPosition
         }
     , nextPiece = Circle
+    , cells = []
     , level = 1
     , interval = 0
     }
 
 
-cellsForShape : Shape -> List ( Int, Int )
+spawnPosition : Point
+spawnPosition =
+    ( -1, 9 )
+
+
+cellsForShape : Shape -> List Point
 cellsForShape shape =
     case shape of
         Circle ->
@@ -67,7 +84,18 @@ colorForShape shape =
             Color.rgb 255 0 255
 
 
-add : ( Int, Int ) -> ( Int, Int ) -> ( Int, Int )
+toCells : Tetromino -> List Cell
+toCells tetromino =
+    let
+        toCell color position =
+            Cell color position
+    in
+    cellsForShape tetromino.shape
+        |> List.map (add tetromino.position)
+        |> List.map (toCell (colorForShape tetromino.shape))
+
+
+add : Point -> Point -> Point
 add ( ax, ay ) ( bx, by ) =
     ( ax + bx, ay + by )
 
@@ -88,30 +116,50 @@ tickGame delta keys game =
             game.interval + delta
 
         newGame =
-            tickCurrent delta game
+            stepGame delta game
     in
     { newGame | current = processInput newGame.current keys }
 
 
-tickCurrent : Float -> Game -> Game
-tickCurrent delta game =
+stepGame : Float -> Game -> Game
+stepGame delta game =
     let
         currentInterval =
             game.interval + delta
 
-        ( current, interval ) =
-            if currentInterval > speedForLevel game.level then
-                ( if canMoveLower game.current then
-                    moveDown game.current
-                  else
-                    -- TODO: Handle that the piece has settled
-                    game.current
+        shouldStep =
+            currentInterval > speedForLevel game.level
+
+        ( maybeCurrent, interval ) =
+            if shouldStep then
+                ( stepCurrent game.current
                 , currentInterval - speedForLevel game.level
                 )
             else
-                ( game.current, currentInterval )
+                ( Just game.current, currentInterval )
+
+        ( cells, current ) =
+            case maybeCurrent of
+                Just c ->
+                    ( game.cells, c )
+
+                Nothing ->
+                    ( toCells game.current ++ game.cells, Tetromino Circle spawnPosition )
     in
-    { game | interval = interval, current = current }
+    { game
+        | interval = interval
+        , current = current
+        , cells = cells
+    }
+
+
+stepCurrent : Tetromino -> Maybe Tetromino
+stepCurrent tetromino =
+    if canMoveLower tetromino then
+        Just (moveDown tetromino)
+    else
+        -- Cannot move tetromino down, add it to the cell list and generate a new tetromino
+        Nothing
 
 
 moveDown : Tetromino -> Tetromino
