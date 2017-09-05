@@ -4,6 +4,7 @@ import Collage
 import Color
 import Element
 import Html exposing (Html)
+import Input
 
 
 -- MODEL
@@ -28,12 +29,13 @@ type alias Level =
 
 type Shape
     = Circle
+    | T
 
 
 initialGame : Game
 initialGame =
     { current =
-        { shape = Circle
+        { shape = T
         , position = ( -1, 9 )
         }
     , level = 1
@@ -47,12 +49,23 @@ cellsForShape shape =
         Circle ->
             [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
 
+        T ->
+            [ ( 0, 0 ), ( -1, 0 ), ( 1, 0 ), ( 0, -1 ) ]
+
 
 colorForShape : Shape -> Color.Color
 colorForShape shape =
     case shape of
         Circle ->
             Color.rgb 255 255 0
+
+        T ->
+            Color.rgb 255 0 255
+
+
+add : ( Int, Int ) -> ( Int, Int ) -> ( Int, Int )
+add ( ax, ay ) ( bx, by ) =
+    ( ax + bx, ay + by )
 
 
 
@@ -64,8 +77,8 @@ speedForLevel level =
     1000
 
 
-tickGame : Float -> Game -> Game
-tickGame delta game =
+tickGame : Float -> List Input.Key -> Game -> Game
+tickGame delta keys game =
     let
         currentInterval =
             game.interval + delta
@@ -76,7 +89,51 @@ tickGame delta game =
             else
                 ( game.current, currentInterval )
     in
-    { game | interval = interval, current = current }
+    { game | interval = interval, current = processInput current keys }
+
+
+processInput : Tetromino -> List Input.Key -> Tetromino
+processInput tetromino =
+    List.foldl
+        (\k c ->
+            case k of
+                Input.Left ->
+                    if canMoveLeft c then
+                        { c | position = add ( -1, 0 ) c.position }
+                    else
+                        c
+
+                Input.Right ->
+                    if canMoveRight c then
+                        { c | position = add ( 1, 0 ) c.position }
+                    else
+                        c
+        )
+        tetromino
+
+
+canMoveLeft : Tetromino -> Bool
+canMoveLeft tetromino =
+    let
+        cells =
+            cellsForShape tetromino.shape
+    in
+    List.map (\c -> add c tetromino.position) cells
+        |> List.map (add ( -1, 0 ))
+        |> Debug.log "Can Move Left cells"
+        |> List.any (\( x, _ ) -> x > -4)
+
+
+canMoveRight : Tetromino -> Bool
+canMoveRight tetromino =
+    let
+        cells =
+            cellsForShape tetromino.shape
+    in
+    List.map (\c -> add c tetromino.position) cells
+        |> List.map (add ( 1, 0 ))
+        |> Debug.log "Can Move Right cells"
+        |> List.any (\( x, _ ) -> x < 3)
 
 
 tickCurrent : Tetromino -> Tetromino
@@ -97,11 +154,8 @@ canMoveLower tetromino =
     let
         cells =
             cellsForShape tetromino.shape
-
-        ( posX, posY ) =
-            tetromino.position
     in
-    List.map (\( x, y ) -> ( x + posX, y + posY )) cells
+    List.map (\c -> add c tetromino.position) cells
         |> List.any (\( x, y ) -> y > -9)
 
 

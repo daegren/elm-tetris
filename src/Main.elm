@@ -78,7 +78,11 @@ update msg model =
             ( model, Cmd.none )
 
         Tick time ->
-            ( { model | game = Game.tickGame time model.game }, Cmd.none )
+            let
+                ( keys, input ) =
+                    Input.tickDebounce time model.input
+            in
+            ( { model | game = Game.tickGame time keys model.game, input = input }, Cmd.none )
 
         KeyDown key ->
             let
