@@ -106,7 +106,7 @@ add ( ax, ay ) ( bx, by ) =
 
 speedForLevel : Level -> Float
 speedForLevel level =
-    1000
+    100
 
 
 tickGame : Float -> List Input.Key -> Game -> Game
@@ -132,7 +132,7 @@ stepGame delta game =
 
         ( maybeCurrent, interval ) =
             if shouldStep then
-                ( stepCurrent game.current
+                ( stepCurrent game game.current
                 , currentInterval - speedForLevel game.level
                 )
             else
@@ -144,7 +144,7 @@ stepGame delta game =
                     ( game.cells, c )
 
                 Nothing ->
-                    ( toCells game.current ++ game.cells, Tetromino Circle spawnPosition )
+                    ( toCells game.current ++ game.cells, Tetromino T spawnPosition )
     in
     { game
         | interval = interval
@@ -153,9 +153,9 @@ stepGame delta game =
     }
 
 
-stepCurrent : Tetromino -> Maybe Tetromino
-stepCurrent tetromino =
-    if canMoveLower tetromino then
+stepCurrent : Game -> Tetromino -> Maybe Tetromino
+stepCurrent game tetromino =
+    if canMoveLower game tetromino then
         Just (moveDown tetromino)
     else
         -- Cannot move tetromino down, add it to the cell list and generate a new tetromino
@@ -209,14 +209,22 @@ canMoveRight tetromino =
         |> List.any (\( x, _ ) -> x < 3)
 
 
-canMoveLower : Tetromino -> Bool
-canMoveLower tetromino =
+canMoveLower : Game -> Tetromino -> Bool
+canMoveLower game tetromino =
     let
         cells =
             cellsForShape tetromino.shape
+                |> List.map (add ( 0, -1 ))
+                |> List.map (\c -> add c tetromino.position)
+
+        isAboveGrid ( _, y ) =
+            y > -10
+
+        wouldCollide p =
+            List.map .position game.cells
+                |> List.all ((/=) p)
     in
-    List.map (\c -> add c tetromino.position) cells
-        |> List.any (\( x, y ) -> y > -9)
+    List.any isAboveGrid cells && List.all wouldCollide cells
 
 
 
@@ -276,6 +284,7 @@ playField game =
             height
             [ backgroundView width height
             , currentView game.current
+            , cellsView game.cells
             ]
 
 
@@ -293,6 +302,35 @@ backgroundView : Float -> Float -> Collage.Form
 backgroundView width height =
     Collage.rect width height
         |> Collage.filled backgroundColor
+
+
+position : { a | position : Point } -> ( Float, Float )
+position tetromino =
+    let
+        ( posX, posY ) =
+            tetromino.position
+
+        x =
+            toFloat (posX * cellSize) + (cellSize / 2)
+
+        y =
+            toFloat (posY * cellSize) + (cellSize / 2)
+    in
+    ( toFloat (posX * cellSize) + (cellSize / 2)
+    , toFloat (posY * cellSize) + (cellSize / 2)
+    )
+
+
+cellsView : List Cell -> Collage.Form
+cellsView cells =
+    List.map cellView cells
+        |> Collage.group
+
+
+cellView : Cell -> Collage.Form
+cellView c =
+    cell c.color
+        |> Collage.move (position c)
 
 
 currentView : Tetromino -> Collage.Form
