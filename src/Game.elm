@@ -233,7 +233,7 @@ canMoveLeft game tetromino =
         isInsideGrid ( x, _ ) =
             x > -6
     in
-    List.all isInsideGrid cells && List.all (wouldCollide game) cells
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 canMoveRight : Game -> Tetromino -> Bool
@@ -247,7 +247,7 @@ canMoveRight game tetromino =
         isInsideGrid ( x, _ ) =
             x < 5
     in
-    List.all isInsideGrid cells && List.all (wouldCollide game) cells
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 canMoveLower : Game -> Tetromino -> Bool
@@ -261,7 +261,7 @@ canMoveLower game tetromino =
         isAboveGrid ( _, y ) =
             y > -11
     in
-    List.all isAboveGrid cells && List.all (wouldCollide game) cells
+    List.all (\cell -> isAboveGrid cell && wouldCollide game cell) cells
 
 
 wouldCollide : Game -> Point -> Bool
