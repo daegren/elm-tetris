@@ -106,7 +106,7 @@ add ( ax, ay ) ( bx, by ) =
 
 speedForLevel : Level -> Float
 speedForLevel level =
-    100
+    250
 
 
 tickGame : Float -> List Input.Key -> Game -> Game
@@ -118,7 +118,7 @@ tickGame delta keys game =
         newGame =
             stepGame delta game
     in
-    { newGame | current = processInput newGame.current keys }
+    { newGame | current = processInput newGame newGame.current keys }
 
 
 stepGame : Float -> Game -> Game
@@ -167,19 +167,19 @@ moveDown tetromino =
     { tetromino | position = Tuple.mapSecond (\y -> y - 1) tetromino.position }
 
 
-processInput : Tetromino -> List Input.Key -> Tetromino
-processInput tetromino =
+processInput : Game -> Tetromino -> List Input.Key -> Tetromino
+processInput game tetromino =
     List.foldl
         (\k c ->
             case k of
                 Input.Left ->
-                    if canMoveLeft c then
+                    if canMoveLeft game c then
                         { c | position = add ( -1, 0 ) c.position }
                     else
                         c
 
                 Input.Right ->
-                    if canMoveRight c then
+                    if canMoveRight game c then
                         { c | position = add ( 1, 0 ) c.position }
                     else
                         c
@@ -187,26 +187,32 @@ processInput tetromino =
         tetromino
 
 
-canMoveLeft : Tetromino -> Bool
-canMoveLeft tetromino =
+canMoveLeft : Game -> Tetromino -> Bool
+canMoveLeft game tetromino =
     let
         cells =
             cellsForShape tetromino.shape
+                |> List.map (add ( -1, 0 ))
+                |> List.map (\c -> add c tetromino.position)
+
+        isInsideGrid ( x, _ ) =
+            x > -4
     in
-    List.map (\c -> add c tetromino.position) cells
-        |> List.map (add ( -1, 0 ))
-        |> List.any (\( x, _ ) -> x > -4)
+    List.any isInsideGrid cells && List.all (wouldCollide game) cells
 
 
-canMoveRight : Tetromino -> Bool
-canMoveRight tetromino =
+canMoveRight : Game -> Tetromino -> Bool
+canMoveRight game tetromino =
     let
         cells =
             cellsForShape tetromino.shape
+                |> List.map (add ( 1, 0 ))
+                |> List.map (\c -> add c tetromino.position)
+
+        isInsideGrid ( x, _ ) =
+            x < 3
     in
-    List.map (\c -> add c tetromino.position) cells
-        |> List.map (add ( 1, 0 ))
-        |> List.any (\( x, _ ) -> x < 3)
+    List.any isInsideGrid cells && List.all (wouldCollide game) cells
 
 
 canMoveLower : Game -> Tetromino -> Bool
@@ -219,12 +225,14 @@ canMoveLower game tetromino =
 
         isAboveGrid ( _, y ) =
             y > -10
-
-        wouldCollide p =
-            List.map .position game.cells
-                |> List.all ((/=) p)
     in
-    List.any isAboveGrid cells && List.all wouldCollide cells
+    List.any isAboveGrid cells && List.all (wouldCollide game) cells
+
+
+wouldCollide : Game -> Point -> Bool
+wouldCollide game p =
+    List.map .position game.cells
+        |> List.all ((/=) p)
 
 
 
