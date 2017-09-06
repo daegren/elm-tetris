@@ -54,10 +54,10 @@ type alias Cell =
 initialGame : Game
 initialGame =
     { current =
-        { shape = L
+        { shape = J
         , position = spawnPosition
         }
-    , nextPiece = L
+    , nextPiece = O
     , cells = []
     , level = 1
     , interval = 0
@@ -179,7 +179,7 @@ stepGame delta game =
                     ( game.cells, c )
 
                 Nothing ->
-                    ( toCells game.current ++ game.cells, Tetromino T spawnPosition )
+                    ( toCells game.current ++ game.cells, Tetromino game.nextPiece spawnPosition )
     in
     { game
         | interval = interval
@@ -231,9 +231,9 @@ canMoveLeft game tetromino =
                 |> List.map (\c -> add c tetromino.position)
 
         isInsideGrid ( x, _ ) =
-            x > -4
+            x > -6
     in
-    List.any isInsideGrid cells && List.all (wouldCollide game) cells
+    List.all isInsideGrid cells && List.all (wouldCollide game) cells
 
 
 canMoveRight : Game -> Tetromino -> Bool
@@ -245,9 +245,9 @@ canMoveRight game tetromino =
                 |> List.map (\c -> add c tetromino.position)
 
         isInsideGrid ( x, _ ) =
-            x < 3
+            x < 5
     in
-    List.any isInsideGrid cells && List.all (wouldCollide game) cells
+    List.all isInsideGrid cells && List.all (wouldCollide game) cells
 
 
 canMoveLower : Game -> Tetromino -> Bool
@@ -259,9 +259,9 @@ canMoveLower game tetromino =
                 |> List.map (\c -> add c tetromino.position)
 
         isAboveGrid ( _, y ) =
-            y > -10
+            y > -11
     in
-    List.any isAboveGrid cells && List.all (wouldCollide game) cells
+    List.all isAboveGrid cells && List.all (wouldCollide game) cells
 
 
 wouldCollide : Game -> Point -> Bool
@@ -314,7 +314,7 @@ nextPieceView { nextPiece } =
                     ( 0, cellSize / 2 )
 
                 J ->
-                    ( -cellSize / 2, 0 )
+                    ( cellSize / 2, 0 )
 
                 L ->
                     ( -cellSize / 2, 0 )
