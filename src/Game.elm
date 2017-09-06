@@ -32,7 +32,7 @@ type alias Level =
 
 
 type Shape
-    = Circle
+    = O
     | T
 
 
@@ -52,7 +52,7 @@ initialGame =
         { shape = T
         , position = spawnPosition
         }
-    , nextPiece = Circle
+    , nextPiece = O
     , cells = []
     , level = 1
     , interval = 0
@@ -67,7 +67,7 @@ spawnPosition =
 cellsForShape : Shape -> List Point
 cellsForShape shape =
     case shape of
-        Circle ->
+        O ->
             [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
 
         T ->
@@ -77,7 +77,7 @@ cellsForShape shape =
 colorForShape : Shape -> Color.Color
 colorForShape shape =
     case shape of
-        Circle ->
+        O ->
             Color.rgb 255 255 0
 
         T ->
@@ -263,7 +263,7 @@ nextPieceView { nextPiece } =
 
         offset =
             case nextPiece of
-                Circle ->
+                O ->
                     ( -cellSize / 2, cellSize / 2 )
 
                 T ->
