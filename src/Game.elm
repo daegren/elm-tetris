@@ -60,17 +60,32 @@ type alias Cell =
 
 initialGame : Game
 initialGame =
+    let
+        -- TODO: generate initialSeed from JS and pass through flags
+        seed0 =
+            Random.initialSeed 1234
+
+        ( initialPiece, seed1 ) =
+            Random.step (nextPiece fullBag) seed0
+
+        bag0 =
+            List.filter ((/=) initialPiece) fullBag
+
+        ( next, seed2 ) =
+            Random.step (nextPiece bag0) seed1
+
+        bag1 =
+            List.filter ((/=) next) bag0
+    in
     { current =
-        { shape = J
+        { shape = initialPiece
         , position = spawnPosition
         }
-    , nextPiece = O
+    , nextPiece = next
     , cells = []
     , level = 1
     , interval = 0
-    , tileBag = fullBag
-
-    -- TODO: generate initialSeed from JS and pass through flags
+    , tileBag = bag1
     , seed = Random.initialSeed 1234
     }
 
