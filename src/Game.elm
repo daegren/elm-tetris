@@ -7,6 +7,7 @@ import GameStyles
 import Html exposing (Html, div)
 import Html.CssHelpers
 import Input
+import Random
 
 
 -- MODEL
@@ -18,6 +19,8 @@ type alias Game =
     , cells : List Cell
     , level : Level
     , interval : Float
+    , tileBag : TileBag
+    , seed : Random.Seed
     }
 
 
@@ -41,6 +44,10 @@ type Shape
     | L
 
 
+type alias TileBag =
+    List Shape
+
+
 type alias Point =
     ( Int, Int )
 
@@ -53,15 +60,39 @@ type alias Cell =
 
 initialGame : Game
 initialGame =
+    let
+        -- TODO: generate initialSeed from JS and pass through flags
+        seed0 =
+            Random.initialSeed 1234
+
+        ( initialPiece, seed1 ) =
+            Random.step (nextPiece fullBag) seed0
+
+        bag0 =
+            List.filter ((/=) initialPiece) fullBag
+
+        ( next, seed2 ) =
+            Random.step (nextPiece bag0) seed1
+
+        bag1 =
+            List.filter ((/=) next) bag0
+    in
     { current =
-        { shape = J
+        { shape = initialPiece
         , position = spawnPosition
         }
-    , nextPiece = O
+    , nextPiece = next
     , cells = []
     , level = 1
     , interval = 0
+    , tileBag = bag1
+    , seed = Random.initialSeed 1234
     }
+
+
+fullBag : TileBag
+fullBag =
+    [ O, T, I, S, Z, J, L ]
 
 
 spawnPosition : Point
@@ -136,6 +167,27 @@ add ( ax, ay ) ( bx, by ) =
 
 
 
+-- GENERATORS
+
+
+nextPiece : TileBag -> Random.Generator Shape
+nextPiece tileBag =
+    Random.map (Maybe.withDefault O) (oneOf tileBag)
+
+
+oneOf : List a -> Random.Generator (Maybe a)
+oneOf list =
+    Random.map
+        (\i ->
+            List.indexedMap (,) list
+                |> List.filter (\( idx, _ ) -> idx == i)
+                |> List.map Tuple.second
+                |> List.head
+        )
+        (Random.int 0 (List.length list - 1))
+
+
+
 -- UPDATE
 
 
@@ -172,20 +224,33 @@ stepGame delta game =
                 )
             else
                 ( Just game.current, currentInterval )
-
-        ( cells, current ) =
-            case maybeCurrent of
-                Just c ->
-                    ( game.cells, c )
-
-                Nothing ->
-                    ( toCells game.current ++ game.cells, Tetromino game.nextPiece spawnPosition )
     in
-    { game
-        | interval = interval
-        , current = current
-        , cells = cells
-    }
+    case maybeCurrent of
+        Just c ->
+            { game
+                | interval = interval
+                , current = c
+            }
+
+        Nothing ->
+            let
+                bag =
+                    if List.isEmpty game.tileBag then
+                        fullBag
+                    else
+                        game.tileBag
+
+                ( p, seed ) =
+                    Random.step (nextPiece bag) game.seed
+            in
+            { game
+                | interval = interval
+                , current = Tetromino game.nextPiece spawnPosition
+                , cells = toCells game.current ++ game.cells
+                , nextPiece = p
+                , seed = seed
+                , tileBag = List.filter ((/=) p) bag
+            }
 
 
 stepCurrent : Game -> Tetromino -> Maybe Tetromino
