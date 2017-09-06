@@ -32,8 +32,13 @@ type alias Level =
 
 
 type Shape
-    = Circle
+    = O
     | T
+    | I
+    | S
+    | Z
+    | J
+    | L
 
 
 type alias Point =
@@ -49,10 +54,10 @@ type alias Cell =
 initialGame : Game
 initialGame =
     { current =
-        { shape = T
+        { shape = J
         , position = spawnPosition
         }
-    , nextPiece = Circle
+    , nextPiece = O
     , cells = []
     , level = 1
     , interval = 0
@@ -67,21 +72,51 @@ spawnPosition =
 cellsForShape : Shape -> List Point
 cellsForShape shape =
     case shape of
-        Circle ->
+        O ->
             [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
 
         T ->
             [ ( 0, 0 ), ( -1, 0 ), ( 1, 0 ), ( 0, -1 ) ]
 
+        I ->
+            [ ( 0, 1 ), ( 0, 0 ), ( 0, -1 ), ( 0, -2 ) ]
+
+        S ->
+            [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ) ]
+
+        Z ->
+            [ ( 0, 0 ), ( -1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
+
+        J ->
+            [ ( 0, 0 ), ( 0, -1 ), ( -1, -1 ), ( 0, 1 ) ]
+
+        L ->
+            [ ( 0, 0 ), ( 0, -1 ), ( 1, -1 ), ( 0, 1 ) ]
+
 
 colorForShape : Shape -> Color.Color
 colorForShape shape =
     case shape of
-        Circle ->
+        O ->
             Color.rgb 255 255 0
 
         T ->
             Color.rgb 255 0 255
+
+        I ->
+            Color.rgb 0 255 255
+
+        S ->
+            Color.rgb 0 255 0
+
+        Z ->
+            Color.rgb 255 0 0
+
+        J ->
+            Color.rgb 0 0 255
+
+        L ->
+            Color.rgb 255 165 0
 
 
 toCells : Tetromino -> List Cell
@@ -144,7 +179,7 @@ stepGame delta game =
                     ( game.cells, c )
 
                 Nothing ->
-                    ( toCells game.current ++ game.cells, Tetromino T spawnPosition )
+                    ( toCells game.current ++ game.cells, Tetromino game.nextPiece spawnPosition )
     in
     { game
         | interval = interval
@@ -196,9 +231,9 @@ canMoveLeft game tetromino =
                 |> List.map (\c -> add c tetromino.position)
 
         isInsideGrid ( x, _ ) =
-            x > -4
+            x > -6
     in
-    List.any isInsideGrid cells && List.all (wouldCollide game) cells
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 canMoveRight : Game -> Tetromino -> Bool
@@ -210,9 +245,9 @@ canMoveRight game tetromino =
                 |> List.map (\c -> add c tetromino.position)
 
         isInsideGrid ( x, _ ) =
-            x < 3
+            x < 5
     in
-    List.any isInsideGrid cells && List.all (wouldCollide game) cells
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 canMoveLower : Game -> Tetromino -> Bool
@@ -224,9 +259,9 @@ canMoveLower game tetromino =
                 |> List.map (\c -> add c tetromino.position)
 
         isAboveGrid ( _, y ) =
-            y > -10
+            y > -11
     in
-    List.any isAboveGrid cells && List.all (wouldCollide game) cells
+    List.all (\cell -> isAboveGrid cell && wouldCollide game cell) cells
 
 
 wouldCollide : Game -> Point -> Bool
@@ -263,11 +298,26 @@ nextPieceView { nextPiece } =
 
         offset =
             case nextPiece of
-                Circle ->
+                O ->
                     ( -cellSize / 2, cellSize / 2 )
 
                 T ->
                     ( 0, 0 )
+
+                I ->
+                    ( 0, cellSize / 2 )
+
+                S ->
+                    ( 0, cellSize / 2 )
+
+                Z ->
+                    ( 0, cellSize / 2 )
+
+                J ->
+                    ( cellSize / 2, 0 )
+
+                L ->
+                    ( -cellSize / 2, 0 )
     in
     Element.toHtml <|
         Collage.collage size
