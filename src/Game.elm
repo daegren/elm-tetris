@@ -15,6 +15,7 @@ import Input
 type alias Game =
     { current : Tetromino
     , nextPiece : Shape
+    , cells : List Cell
     , level : Level
     , interval : Float
     }
@@ -22,7 +23,7 @@ type alias Game =
 
 type alias Tetromino =
     { shape : Shape
-    , position : ( Int, Int )
+    , position : Point
     }
 
 
@@ -35,19 +36,35 @@ type Shape
     | T
 
 
+type alias Point =
+    ( Int, Int )
+
+
+type alias Cell =
+    { color : Color.Color
+    , position : Point
+    }
+
+
 initialGame : Game
 initialGame =
     { current =
         { shape = T
-        , position = ( -1, 9 )
+        , position = spawnPosition
         }
     , nextPiece = Circle
+    , cells = []
     , level = 1
     , interval = 0
     }
 
 
-cellsForShape : Shape -> List ( Int, Int )
+spawnPosition : Point
+spawnPosition =
+    ( -1, 9 )
+
+
+cellsForShape : Shape -> List Point
 cellsForShape shape =
     case shape of
         Circle ->
@@ -67,7 +84,18 @@ colorForShape shape =
             Color.rgb 255 0 255
 
 
-add : ( Int, Int ) -> ( Int, Int ) -> ( Int, Int )
+toCells : Tetromino -> List Cell
+toCells tetromino =
+    let
+        toCell color position =
+            Cell color position
+    in
+    cellsForShape tetromino.shape
+        |> List.map (add tetromino.position)
+        |> List.map (toCell (colorForShape tetromino.shape))
+
+
+add : Point -> Point -> Point
 add ( ax, ay ) ( bx, by ) =
     ( ax + bx, ay + by )
 
@@ -78,7 +106,7 @@ add ( ax, ay ) ( bx, by ) =
 
 speedForLevel : Level -> Float
 speedForLevel level =
-    1000
+    250
 
 
 tickGame : Float -> List Input.Key -> Game -> Game
@@ -87,28 +115,71 @@ tickGame delta keys game =
         currentInterval =
             game.interval + delta
 
-        ( current, interval ) =
-            if currentInterval > speedForLevel game.level then
-                ( tickCurrent game.current, currentInterval - speedForLevel game.level )
-            else
-                ( game.current, currentInterval )
+        newGame =
+            stepGame delta game
     in
-    { game | interval = interval, current = processInput current keys }
+    { newGame | current = processInput newGame newGame.current keys }
 
 
-processInput : Tetromino -> List Input.Key -> Tetromino
-processInput tetromino =
+stepGame : Float -> Game -> Game
+stepGame delta game =
+    let
+        currentInterval =
+            game.interval + delta
+
+        shouldStep =
+            currentInterval > speedForLevel game.level
+
+        ( maybeCurrent, interval ) =
+            if shouldStep then
+                ( stepCurrent game game.current
+                , currentInterval - speedForLevel game.level
+                )
+            else
+                ( Just game.current, currentInterval )
+
+        ( cells, current ) =
+            case maybeCurrent of
+                Just c ->
+                    ( game.cells, c )
+
+                Nothing ->
+                    ( toCells game.current ++ game.cells, Tetromino T spawnPosition )
+    in
+    { game
+        | interval = interval
+        , current = current
+        , cells = cells
+    }
+
+
+stepCurrent : Game -> Tetromino -> Maybe Tetromino
+stepCurrent game tetromino =
+    if canMoveLower game tetromino then
+        Just (moveDown tetromino)
+    else
+        -- Cannot move tetromino down, add it to the cell list and generate a new tetromino
+        Nothing
+
+
+moveDown : Tetromino -> Tetromino
+moveDown tetromino =
+    { tetromino | position = Tuple.mapSecond (\y -> y - 1) tetromino.position }
+
+
+processInput : Game -> Tetromino -> List Input.Key -> Tetromino
+processInput game tetromino =
     List.foldl
         (\k c ->
             case k of
                 Input.Left ->
-                    if canMoveLeft c then
+                    if canMoveLeft game c then
                         { c | position = add ( -1, 0 ) c.position }
                     else
                         c
 
                 Input.Right ->
-                    if canMoveRight c then
+                    if canMoveRight game c then
                         { c | position = add ( 1, 0 ) c.position }
                     else
                         c
@@ -116,49 +187,52 @@ processInput tetromino =
         tetromino
 
 
-canMoveLeft : Tetromino -> Bool
-canMoveLeft tetromino =
+canMoveLeft : Game -> Tetromino -> Bool
+canMoveLeft game tetromino =
     let
         cells =
             cellsForShape tetromino.shape
+                |> List.map (add ( -1, 0 ))
+                |> List.map (\c -> add c tetromino.position)
+
+        isInsideGrid ( x, _ ) =
+            x > -4
     in
-    List.map (\c -> add c tetromino.position) cells
-        |> List.map (add ( -1, 0 ))
-        |> List.any (\( x, _ ) -> x > -4)
+    List.any isInsideGrid cells && List.all (wouldCollide game) cells
 
 
-canMoveRight : Tetromino -> Bool
-canMoveRight tetromino =
+canMoveRight : Game -> Tetromino -> Bool
+canMoveRight game tetromino =
     let
         cells =
             cellsForShape tetromino.shape
+                |> List.map (add ( 1, 0 ))
+                |> List.map (\c -> add c tetromino.position)
+
+        isInsideGrid ( x, _ ) =
+            x < 3
     in
-    List.map (\c -> add c tetromino.position) cells
-        |> List.map (add ( 1, 0 ))
-        |> List.any (\( x, _ ) -> x < 3)
+    List.any isInsideGrid cells && List.all (wouldCollide game) cells
 
 
-tickCurrent : Tetromino -> Tetromino
-tickCurrent tetromino =
-    let
-        position =
-            if canMoveLower tetromino then
-                tetromino.position
-                    |> Tuple.mapSecond (\y -> y - 1)
-            else
-                tetromino.position
-    in
-    { tetromino | position = position }
-
-
-canMoveLower : Tetromino -> Bool
-canMoveLower tetromino =
+canMoveLower : Game -> Tetromino -> Bool
+canMoveLower game tetromino =
     let
         cells =
             cellsForShape tetromino.shape
+                |> List.map (add ( 0, -1 ))
+                |> List.map (\c -> add c tetromino.position)
+
+        isAboveGrid ( _, y ) =
+            y > -10
     in
-    List.map (\c -> add c tetromino.position) cells
-        |> List.any (\( x, y ) -> y > -9)
+    List.any isAboveGrid cells && List.all (wouldCollide game) cells
+
+
+wouldCollide : Game -> Point -> Bool
+wouldCollide game p =
+    List.map .position game.cells
+        |> List.all ((/=) p)
 
 
 
@@ -218,6 +292,7 @@ playField game =
             height
             [ backgroundView width height
             , currentView game.current
+            , cellsView game.cells
             ]
 
 
@@ -235,6 +310,35 @@ backgroundView : Float -> Float -> Collage.Form
 backgroundView width height =
     Collage.rect width height
         |> Collage.filled backgroundColor
+
+
+position : { a | position : Point } -> ( Float, Float )
+position tetromino =
+    let
+        ( posX, posY ) =
+            tetromino.position
+
+        x =
+            toFloat (posX * cellSize) + (cellSize / 2)
+
+        y =
+            toFloat (posY * cellSize) + (cellSize / 2)
+    in
+    ( toFloat (posX * cellSize) + (cellSize / 2)
+    , toFloat (posY * cellSize) + (cellSize / 2)
+    )
+
+
+cellsView : List Cell -> Collage.Form
+cellsView cells =
+    List.map cellView cells
+        |> Collage.group
+
+
+cellView : Cell -> Collage.Form
+cellView c =
+    cell c.color
+        |> Collage.move (position c)
 
 
 currentView : Tetromino -> Collage.Form
