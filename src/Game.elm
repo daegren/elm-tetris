@@ -283,6 +283,9 @@ processInput game tetromino =
                         { c | position = add ( 1, 0 ) c.position }
                     else
                         c
+
+                Input.RotateClockwise ->
+                    c
         )
         tetromino
 

@@ -112,13 +112,23 @@ update msg model =
 mapKey : Keyboard.KeyCode -> Maybe Input.Key
 mapKey keyCode =
     case keyCode of
+        -- Left Arrow
         37 ->
             Just Input.Left
 
+        -- Right arrow
         39 ->
             Just Input.Right
 
+        -- c
+        67 ->
+            Just Input.RotateClockwise
+
         _ ->
+            let
+                _ =
+                    Debug.log "mapKey" keyCode
+            in
             Nothing
 
 
