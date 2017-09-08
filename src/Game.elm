@@ -122,7 +122,7 @@ cellsForShape shape =
             [ ( -2, 0 ), ( -1, 0 ), ( 0, 0 ), ( 1, 0 ) ]
 
         S ->
-            [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ) ]
+            [ ( -1, 0 ), ( 0, 0 ), ( 0, 1 ), ( 1, 1 ) ]
 
         Z ->
             [ ( 0, 0 ), ( -1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
@@ -259,7 +259,7 @@ stepGame delta game =
             in
             { game
                 | interval = interval
-                , current = Tetromino J spawnPosition Up
+                , current = Tetromino S spawnPosition Up
                 , cells = toCells game.current ++ game.cells
                 , nextPiece = p
                 , seed = seed
