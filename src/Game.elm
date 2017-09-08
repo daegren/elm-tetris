@@ -44,6 +44,13 @@ type Shape
     | L
 
 
+type Direction
+    = Up
+    | Right
+    | Down
+    | Left
+
+
 type alias TileBag =
     List Shape
 
@@ -110,7 +117,7 @@ cellsForShape shape =
             [ ( 0, 0 ), ( -1, 0 ), ( 1, 0 ), ( 0, -1 ) ]
 
         I ->
-            [ ( 0, 1 ), ( 0, 0 ), ( 0, -1 ), ( 0, -2 ) ]
+            [ ( -2, 0 ), ( -1, 0 ), ( 0, 0 ), ( 1, 0 ) ]
 
         S ->
             [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ) ]
@@ -288,6 +295,42 @@ processInput game tetromino =
                     c
         )
         tetromino
+
+
+rotatePoints : Direction -> Shape -> List Point
+rotatePoints direction shape =
+    let
+        points =
+            cellsForShape shape
+
+        numOfTurns =
+            case direction of
+                Up ->
+                    0
+
+                Right ->
+                    1
+
+                Down ->
+                    2
+
+                Left ->
+                    3
+    in
+    if direction == Up then
+        points
+    else
+        List.map (add ( 0.5, 0.5 )) points
+            |> List.map toPolar
+            |> List.map (Tuple.mapSecond (\a -> a - turns (0.25 * numOfTurns)))
+            |> List.map fromPolar
+            |> List.map (add ( -0.5, -0.5 ))
+            |> List.map (\( x, y ) -> ( fixRoundingErrors x, fixRoundingErrors y ))
+
+
+fixRoundingErrors : Float -> Float
+fixRoundingErrors a =
+    round a |> toFloat
 
 
 canMoveLeft : Game -> Tetromino -> Bool
