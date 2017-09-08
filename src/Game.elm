@@ -259,7 +259,7 @@ stepGame delta game =
             in
             { game
                 | interval = interval
-                , current = Tetromino T spawnPosition Up
+                , current = Tetromino game.nextPiece spawnPosition Up
                 , cells = toCells game.current ++ game.cells
                 , nextPiece = p
                 , seed = seed
