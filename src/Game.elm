@@ -49,7 +49,7 @@ type alias TileBag =
 
 
 type alias Point =
-    ( Int, Int )
+    ( Float, Float )
 
 
 type alias Cell =
@@ -437,14 +437,12 @@ position tetromino =
             tetromino.position
 
         x =
-            toFloat (posX * cellSize) + (cellSize / 2)
+            (posX * cellSize) + (cellSize / 2)
 
         y =
-            toFloat (posY * cellSize) + (cellSize / 2)
+            (posY * cellSize) + (cellSize / 2)
     in
-    ( toFloat (posX * cellSize) + (cellSize / 2)
-    , toFloat (posY * cellSize) + (cellSize / 2)
-    )
+    ( x, y )
 
 
 cellsView : List Cell -> Collage.Form
@@ -466,10 +464,10 @@ currentView current =
             current.position
 
         x =
-            toFloat (posX * cellSize) + (cellSize / 2)
+            (posX * cellSize) + (cellSize / 2)
 
         y =
-            toFloat (posY * cellSize) + (cellSize / 2)
+            (posY * cellSize) + (cellSize / 2)
     in
     tetrominoCell current.shape
         |> Collage.move ( x, y )
@@ -481,7 +479,7 @@ tetrominoCell shape =
         |> List.map
             (\( x, y ) ->
                 cell (colorForShape shape)
-                    |> Collage.move ( cellSize * toFloat x, cellSize * toFloat y )
+                    |> Collage.move ( cellSize * x, cellSize * y )
             )
         |> Collage.group
 
