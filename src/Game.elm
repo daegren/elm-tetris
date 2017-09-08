@@ -113,7 +113,7 @@ cellsForShape : Shape -> List Point
 cellsForShape shape =
     case shape of
         O ->
-            [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
+            [ ( 0, 0 ), ( -1, 0 ), ( 0, -1 ), ( -1, -1 ) ]
 
         T ->
             [ ( 0, 0 ), ( -1, 0 ), ( 1, 0 ), ( 0, -1 ) ]
@@ -128,7 +128,7 @@ cellsForShape shape =
             [ ( 0, 0 ), ( -1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
 
         J ->
-            [ ( 0, 0 ), ( 0, -1 ), ( -1, -1 ), ( 0, 1 ) ]
+            [ ( -1, 1 ), ( -1, 0 ), ( 0, 0 ), ( 1, 0 ) ]
 
         L ->
             [ ( 0, 0 ), ( 0, -1 ), ( 1, -1 ), ( 0, 1 ) ]
@@ -259,7 +259,7 @@ stepGame delta game =
             in
             { game
                 | interval = interval
-                , current = Tetromino game.nextPiece spawnPosition Up
+                , current = Tetromino J spawnPosition Up
                 , cells = toCells game.current ++ game.cells
                 , nextPiece = p
                 , seed = seed
@@ -323,16 +323,35 @@ rotatePoints direction shape =
 
                 Left ->
                     3
+
+        offset =
+            case shape of
+                I ->
+                    ( 0.5, 0.5 )
+
+                O ->
+                    ( 0.5, 0.5 )
+
+                _ ->
+                    ( 0, 0 )
+
+        negativeOffset =
+            mapTuple (\a b -> ( -1 * a, -1 * b )) offset
     in
     if direction == Up then
         points
     else
-        List.map (add ( 0.5, 0.5 )) points
+        List.map (add offset) points
             |> List.map toPolar
             |> List.map (Tuple.mapSecond (\a -> a - turns (0.25 * numOfTurns)))
             |> List.map fromPolar
-            |> List.map (add ( -0.5, -0.5 ))
+            |> List.map (add negativeOffset)
             |> List.map (\( x, y ) -> ( fixRoundingErrors x, fixRoundingErrors y ))
+
+
+mapTuple : (a -> b -> ( a1, b1 )) -> ( a, b ) -> ( a1, b1 )
+mapTuple mapper ( a, b ) =
+    mapper a b
 
 
 fixRoundingErrors : Float -> Float

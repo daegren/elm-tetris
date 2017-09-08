@@ -11,7 +11,9 @@ all =
         [ describe "rotating piece"
             [ describe "I"
                 [ test "0 degree rotation" <|
-                    \_ -> Expect.equalLists (Game.cellsForShape Game.I) (Game.rotatePoints Game.Up Game.I)
+                    \_ ->
+                        Game.rotatePoints Game.Up Game.I
+                            |> Expect.equalLists (Game.cellsForShape Game.I)
                 , test "90 degree rotation" <|
                     \_ ->
                         Game.rotatePoints Game.Right Game.I
@@ -24,6 +26,24 @@ all =
                     \_ ->
                         Game.rotatePoints Game.Left Game.I
                             |> Expect.equalLists [ ( -1, -2 ), ( -1, -1 ), ( -1, 0 ), ( -1, 1 ) ]
+                ]
+            , describe "J"
+                [ test "0 degree rotation" <|
+                    \_ ->
+                        Game.rotatePoints Game.Up Game.J
+                            |> Expect.equalLists (Game.cellsForShape Game.J)
+                , test "90 degree rotation" <|
+                    \_ ->
+                        Game.rotatePoints Game.Right Game.J
+                            |> Expect.equalLists [ ( 1, 1 ), ( 0, 1 ), ( 0, 0 ), ( 0, -1 ) ]
+                , test "180 degree rotation" <|
+                    \_ ->
+                        Game.rotatePoints Game.Down Game.J
+                            |> Expect.equalLists [ ( 1, -1 ), ( 1, 0 ), ( 0, 0 ), ( -1, 0 ) ]
+                , test "270 degree rotation" <|
+                    \_ ->
+                        Game.rotatePoints Game.Left Game.J
+                            |> Expect.equalLists [ ( -1, -1 ), ( 0, -1 ), ( 0, 0 ), ( 0, 1 ) ]
                 ]
             ]
         ]
