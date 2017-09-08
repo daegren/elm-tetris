@@ -299,7 +299,10 @@ processInput game tetromino =
                         c
 
                 Input.RotateClockwise ->
-                    rotate c
+                    if canRotate game c then
+                        rotate c
+                    else
+                        c
         )
         tetromino
 
@@ -379,6 +382,17 @@ rotate tetromino =
     { tetromino | direction = direction }
 
 
+canRotate : Game -> Tetromino -> Bool
+canRotate game tetromino =
+    let
+        cells =
+            rotate tetromino
+                |> points
+                |> List.map (\c -> add c tetromino.position)
+    in
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
+
+
 canMoveLeft : Game -> Tetromino -> Bool
 canMoveLeft game tetromino =
     let
@@ -386,9 +400,6 @@ canMoveLeft game tetromino =
             points tetromino
                 |> List.map (add ( -1, 0 ))
                 |> List.map (\c -> add c tetromino.position)
-
-        isInsideGrid ( x, _ ) =
-            x > -6
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -400,9 +411,6 @@ canMoveRight game tetromino =
             points tetromino
                 |> List.map (add ( 1, 0 ))
                 |> List.map (\c -> add c tetromino.position)
-
-        isInsideGrid ( x, _ ) =
-            x < 5
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -414,17 +422,21 @@ canMoveLower game tetromino =
             points tetromino
                 |> List.map (add ( 0, -1 ))
                 |> List.map (\c -> add c tetromino.position)
-
-        isAboveGrid ( _, y ) =
-            y > -11
     in
-    List.all (\cell -> isAboveGrid cell && wouldCollide game cell) cells
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 wouldCollide : Game -> Point -> Bool
 wouldCollide game p =
     List.map .position game.cells
         |> List.all ((/=) p)
+
+
+isInsideGrid : Point -> Bool
+isInsideGrid ( x, y ) =
+    (x > -6)
+        && (x < 5)
+        && (y > -11)
 
 
 
