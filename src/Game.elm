@@ -514,6 +514,7 @@ playField game =
             height
             [ backgroundView width height
             , currentView game.current
+            , ghostView game game.current
             , cellsView game.cells
             ]
 
@@ -547,6 +548,23 @@ position tetromino =
             (posY * cellSize) + (cellSize / 2)
     in
     ( x, y )
+
+
+ghostView : Game -> Tetromino -> Collage.Form
+ghostView game tetromino =
+    let
+        calcPosition t =
+            if canMoveLower game t then
+                calcPosition (moveDown t)
+            else
+                t
+
+        finalT =
+            calcPosition tetromino
+    in
+    tetrominoCell finalT.shape finalT.direction
+        |> Collage.alpha 0.375
+        |> Collage.move (position finalT)
 
 
 cellsView : List Cell -> Collage.Form
