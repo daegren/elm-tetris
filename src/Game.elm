@@ -491,36 +491,12 @@ nextPieceView { nextPiece } =
     let
         size =
             5 * cellSize
-
-        offset =
-            case nextPiece of
-                O ->
-                    ( -cellSize / 2, cellSize / 2 )
-
-                T ->
-                    ( 0, 0 )
-
-                I ->
-                    ( 0, cellSize / 2 )
-
-                S ->
-                    ( 0, cellSize / 2 )
-
-                Z ->
-                    ( 0, cellSize / 2 )
-
-                J ->
-                    ( cellSize / 2, 0 )
-
-                L ->
-                    ( -cellSize / 2, 0 )
     in
     Element.toHtml <|
         Collage.collage size
             size
             [ backgroundView size size
             , tetrominoCell nextPiece Up
-                |> Collage.move offset
             ]
 
 
