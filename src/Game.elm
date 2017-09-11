@@ -466,6 +466,14 @@ isInsideGrid ( x, y ) =
         && (y > -11)
 
 
+lowestPosition : Game -> Tetromino -> Tetromino
+lowestPosition game tetromino =
+    if canMoveLower game tetromino then
+        lowestPosition game (moveDown tetromino)
+    else
+        tetromino
+
+
 
 -- CSS HELEPERS
 
@@ -552,19 +560,9 @@ position tetromino =
 
 ghostView : Game -> Tetromino -> Collage.Form
 ghostView game tetromino =
-    let
-        calcPosition t =
-            if canMoveLower game t then
-                calcPosition (moveDown t)
-            else
-                t
-
-        finalT =
-            calcPosition tetromino
-    in
-    tetrominoCell finalT.shape finalT.direction
+    tetrominoCell tetromino.shape tetromino.direction
         |> Collage.alpha 0.375
-        |> Collage.move (position finalT)
+        |> (Collage.move <| position <| lowestPosition game tetromino)
 
 
 cellsView : List Cell -> Collage.Form
