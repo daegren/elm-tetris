@@ -314,6 +314,9 @@ processInput game tetromino =
                         rotate CounterClockwise c
                     else
                         c
+
+                Input.HardDrop ->
+                    lowestPosition game c
         )
         tetromino
 

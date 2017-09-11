@@ -4,6 +4,7 @@ module Input exposing (..)
 type alias Input =
     { left : Bool
     , right : Bool
+    , hardDrop : Bool
     , rotation : Maybe Rotation
     , debounces : List Debounce
     }
@@ -13,6 +14,7 @@ defaultInput : Input
 defaultInput =
     { left = False
     , right = False
+    , hardDrop = False
     , rotation = Nothing
     , debounces = []
     }
@@ -48,6 +50,7 @@ type Key
     | Right
     | RotateClockwise
     | RotateCounterClockwise
+    | HardDrop
 
 
 handleKeyDown : Input -> Key -> Input
@@ -80,6 +83,12 @@ handleKeyDown input key =
 
                 Nothing ->
                     { input | rotation = Just CounterClockwise, debounces = initialDebounce RotateCounterClockwise :: input.debounces }
+
+        HardDrop ->
+            if not input.hardDrop then
+                { input | hardDrop = True, debounces = initialDebounce HardDrop :: input.debounces }
+            else
+                input
 
 
 handleKeyUp : Input -> Key -> Input
@@ -123,6 +132,12 @@ handleKeyUp input key =
                 Nothing ->
                     input
 
+        HardDrop ->
+            if input.hardDrop then
+                { input | hardDrop = False, debounces = removeDebounce HardDrop input.debounces }
+            else
+                input
+
 
 tickDebounce : Float -> Input -> ( List Key, Input )
 tickDebounce diff input =
@@ -163,6 +178,9 @@ tickDebounce diff input =
 
                                     Right ->
                                         { d | current = d.current - interval, interval = Just 150 }
+
+                                    HardDrop ->
+                                        { d | current = 0, interval = Nothing }
                             else
                                 d
 
