@@ -27,6 +27,7 @@ type alias Game =
 type alias Tetromino =
     { shape : Shape
     , position : Point
+    , direction : Direction
     }
 
 
@@ -44,12 +45,24 @@ type Shape
     | L
 
 
+type Direction
+    = Up
+    | Right
+    | Down
+    | Left
+
+
+type Rotation
+    = Clockwise
+    | CounterClockwise
+
+
 type alias TileBag =
     List Shape
 
 
 type alias Point =
-    ( Int, Int )
+    ( Float, Float )
 
 
 type alias Cell =
@@ -80,6 +93,7 @@ initialGame =
     { current =
         { shape = initialPiece
         , position = spawnPosition
+        , direction = Up
         }
     , nextPiece = next
     , cells = []
@@ -104,25 +118,30 @@ cellsForShape : Shape -> List Point
 cellsForShape shape =
     case shape of
         O ->
-            [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
+            [ ( -1, 0 ), ( 0, 0 ), ( 0, -1 ), ( -1, -1 ) ]
 
         T ->
-            [ ( 0, 0 ), ( -1, 0 ), ( 1, 0 ), ( 0, -1 ) ]
+            [ ( -1, 0 ), ( 0, 0 ), ( 0, 1 ), ( 1, 0 ) ]
 
         I ->
-            [ ( 0, 1 ), ( 0, 0 ), ( 0, -1 ), ( 0, -2 ) ]
+            [ ( -2, 0 ), ( -1, 0 ), ( 0, 0 ), ( 1, 0 ) ]
 
         S ->
-            [ ( 0, 0 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ) ]
+            [ ( -1, 0 ), ( 0, 0 ), ( 0, 1 ), ( 1, 1 ) ]
 
         Z ->
-            [ ( 0, 0 ), ( -1, 0 ), ( 0, -1 ), ( 1, -1 ) ]
+            [ ( -1, 1 ), ( 0, 1 ), ( 0, 0 ), ( 1, 0 ) ]
 
         J ->
-            [ ( 0, 0 ), ( 0, -1 ), ( -1, -1 ), ( 0, 1 ) ]
+            [ ( -1, 1 ), ( -1, 0 ), ( 0, 0 ), ( 1, 0 ) ]
 
         L ->
-            [ ( 0, 0 ), ( 0, -1 ), ( 1, -1 ), ( 0, 1 ) ]
+            [ ( -1, 0 ), ( 0, 0 ), ( 1, 0 ), ( 1, 1 ) ]
+
+
+points : Tetromino -> List Point
+points tetromino =
+    rotatePoints tetromino.direction tetromino.shape
 
 
 colorForShape : Shape -> Color.Color
@@ -156,7 +175,7 @@ toCells tetromino =
         toCell color position =
             Cell color position
     in
-    cellsForShape tetromino.shape
+    points tetromino
         |> List.map (add tetromino.position)
         |> List.map (toCell (colorForShape tetromino.shape))
 
@@ -245,7 +264,7 @@ stepGame delta game =
             in
             { game
                 | interval = interval
-                , current = Tetromino game.nextPiece spawnPosition
+                , current = Tetromino game.nextPiece spawnPosition Up
                 , cells = toCells game.current ++ game.cells
                 , nextPiece = p
                 , seed = seed
@@ -283,20 +302,131 @@ processInput game tetromino =
                         { c | position = add ( 1, 0 ) c.position }
                     else
                         c
+
+                Input.RotateClockwise ->
+                    if canRotate game Clockwise c then
+                        rotate Clockwise c
+                    else
+                        c
+
+                Input.RotateCounterClockwise ->
+                    if canRotate game CounterClockwise c then
+                        rotate CounterClockwise c
+                    else
+                        c
         )
         tetromino
+
+
+rotatePoints : Direction -> Shape -> List Point
+rotatePoints direction shape =
+    let
+        points =
+            cellsForShape shape
+
+        numOfTurns =
+            case direction of
+                Up ->
+                    0
+
+                Right ->
+                    1
+
+                Down ->
+                    2
+
+                Left ->
+                    3
+
+        offset =
+            case shape of
+                I ->
+                    ( 0.5, 0.5 )
+
+                O ->
+                    ( 0.5, 0.5 )
+
+                _ ->
+                    ( 0, 0 )
+
+        negativeOffset =
+            mapTuple (\a b -> ( -1 * a, -1 * b )) offset
+    in
+    if direction == Up then
+        points
+    else
+        List.map (add offset) points
+            |> List.map toPolar
+            |> List.map (Tuple.mapSecond (\a -> a - turns (0.25 * numOfTurns)))
+            |> List.map fromPolar
+            |> List.map (add negativeOffset)
+            |> List.map (\( x, y ) -> ( fixRoundingErrors x, fixRoundingErrors y ))
+
+
+mapTuple : (a -> b -> ( a1, b1 )) -> ( a, b ) -> ( a1, b1 )
+mapTuple mapper ( a, b ) =
+    mapper a b
+
+
+fixRoundingErrors : Float -> Float
+fixRoundingErrors a =
+    round a |> toFloat
+
+
+rotate : Rotation -> Tetromino -> Tetromino
+rotate rotation tetromino =
+    let
+        direction =
+            case rotation of
+                Clockwise ->
+                    case tetromino.direction of
+                        Up ->
+                            Right
+
+                        Right ->
+                            Down
+
+                        Down ->
+                            Left
+
+                        Left ->
+                            Up
+
+                CounterClockwise ->
+                    case tetromino.direction of
+                        Up ->
+                            Left
+
+                        Left ->
+                            Down
+
+                        Down ->
+                            Right
+
+                        Right ->
+                            Up
+    in
+    { tetromino | direction = direction }
+
+
+canRotate : Game -> Rotation -> Tetromino -> Bool
+canRotate game rotation tetromino =
+    let
+        cells =
+            rotate rotation tetromino
+                |> points
+                |> List.map (\c -> add c tetromino.position)
+    in
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 canMoveLeft : Game -> Tetromino -> Bool
 canMoveLeft game tetromino =
     let
         cells =
-            cellsForShape tetromino.shape
+            points tetromino
                 |> List.map (add ( -1, 0 ))
                 |> List.map (\c -> add c tetromino.position)
-
-        isInsideGrid ( x, _ ) =
-            x > -6
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -305,12 +435,9 @@ canMoveRight : Game -> Tetromino -> Bool
 canMoveRight game tetromino =
     let
         cells =
-            cellsForShape tetromino.shape
+            points tetromino
                 |> List.map (add ( 1, 0 ))
                 |> List.map (\c -> add c tetromino.position)
-
-        isInsideGrid ( x, _ ) =
-            x < 5
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -319,20 +446,24 @@ canMoveLower : Game -> Tetromino -> Bool
 canMoveLower game tetromino =
     let
         cells =
-            cellsForShape tetromino.shape
+            points tetromino
                 |> List.map (add ( 0, -1 ))
                 |> List.map (\c -> add c tetromino.position)
-
-        isAboveGrid ( _, y ) =
-            y > -11
     in
-    List.all (\cell -> isAboveGrid cell && wouldCollide game cell) cells
+    List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
 
 wouldCollide : Game -> Point -> Bool
 wouldCollide game p =
     List.map .position game.cells
         |> List.all ((/=) p)
+
+
+isInsideGrid : Point -> Bool
+isInsideGrid ( x, y ) =
+    (x > -6)
+        && (x < 5)
+        && (y > -11)
 
 
 
@@ -360,36 +491,12 @@ nextPieceView { nextPiece } =
     let
         size =
             5 * cellSize
-
-        offset =
-            case nextPiece of
-                O ->
-                    ( -cellSize / 2, cellSize / 2 )
-
-                T ->
-                    ( 0, 0 )
-
-                I ->
-                    ( 0, cellSize / 2 )
-
-                S ->
-                    ( 0, cellSize / 2 )
-
-                Z ->
-                    ( 0, cellSize / 2 )
-
-                J ->
-                    ( cellSize / 2, 0 )
-
-                L ->
-                    ( -cellSize / 2, 0 )
     in
     Element.toHtml <|
         Collage.collage size
             size
             [ backgroundView size size
-            , tetrominoCell nextPiece
-                |> Collage.move offset
+            , tetrominoCell nextPiece Up
             ]
 
 
@@ -434,14 +541,12 @@ position tetromino =
             tetromino.position
 
         x =
-            toFloat (posX * cellSize) + (cellSize / 2)
+            (posX * cellSize) + (cellSize / 2)
 
         y =
-            toFloat (posY * cellSize) + (cellSize / 2)
+            (posY * cellSize) + (cellSize / 2)
     in
-    ( toFloat (posX * cellSize) + (cellSize / 2)
-    , toFloat (posY * cellSize) + (cellSize / 2)
-    )
+    ( x, y )
 
 
 cellsView : List Cell -> Collage.Form
@@ -463,22 +568,22 @@ currentView current =
             current.position
 
         x =
-            toFloat (posX * cellSize) + (cellSize / 2)
+            (posX * cellSize) + (cellSize / 2)
 
         y =
-            toFloat (posY * cellSize) + (cellSize / 2)
+            (posY * cellSize) + (cellSize / 2)
     in
-    tetrominoCell current.shape
+    tetrominoCell current.shape current.direction
         |> Collage.move ( x, y )
 
 
-tetrominoCell : Shape -> Collage.Form
-tetrominoCell shape =
-    cellsForShape shape
+tetrominoCell : Shape -> Direction -> Collage.Form
+tetrominoCell shape direction =
+    rotatePoints direction shape
         |> List.map
             (\( x, y ) ->
                 cell (colorForShape shape)
-                    |> Collage.move ( cellSize * toFloat x, cellSize * toFloat y )
+                    |> Collage.move ( cellSize * x, cellSize * y )
             )
         |> Collage.group
 
