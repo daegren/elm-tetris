@@ -303,6 +303,9 @@ processInput game tetromino =
                         rotate c
                     else
                         c
+
+                Input.RotateCounterClockwise ->
+                    c
         )
         tetromino
 

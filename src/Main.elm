@@ -124,6 +124,10 @@ mapKey keyCode =
         67 ->
             Just Input.RotateClockwise
 
+        -- x
+        88 ->
+            Just Input.RotateCounterClockwise
+
         _ ->
             let
                 _ =

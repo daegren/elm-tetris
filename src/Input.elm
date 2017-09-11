@@ -40,13 +40,14 @@ removeDebounce key =
 
 type Rotation
     = Clockwise
-    | Anticlockwise
+    | CounterClockwise
 
 
 type Key
     = Left
     | Right
     | RotateClockwise
+    | RotateCounterClockwise
 
 
 handleKeyDown : Input -> Key -> Input
@@ -72,6 +73,14 @@ handleKeyDown input key =
                 Nothing ->
                     { input | rotation = Just Clockwise, debounces = initialDebounce RotateClockwise :: input.debounces }
 
+        RotateCounterClockwise ->
+            case input.rotation of
+                Just rotation ->
+                    input
+
+                Nothing ->
+                    { input | rotation = Just CounterClockwise, debounces = initialDebounce RotateCounterClockwise :: input.debounces }
+
 
 handleKeyUp : Input -> Key -> Input
 handleKeyUp input key =
@@ -95,8 +104,21 @@ handleKeyUp input key =
                         Clockwise ->
                             { input | rotation = Nothing, debounces = removeDebounce RotateClockwise input.debounces }
 
-                        Anticlockwise ->
+                        CounterClockwise ->
                             input
+
+                Nothing ->
+                    input
+
+        RotateCounterClockwise ->
+            case input.rotation of
+                Just rotation ->
+                    case rotation of
+                        Clockwise ->
+                            input
+
+                        CounterClockwise ->
+                            { input | rotation = Nothing, debounces = removeDebounce RotateCounterClockwise input.debounces }
 
                 Nothing ->
                     input
@@ -131,6 +153,9 @@ tickDebounce diff input =
                             if d.current > interval then
                                 case d.key of
                                     RotateClockwise ->
+                                        { d | current = 0, interval = Nothing }
+
+                                    RotateCounterClockwise ->
                                         { d | current = 0, interval = Nothing }
 
                                     Left ->
