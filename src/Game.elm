@@ -52,6 +52,11 @@ type Direction
     | Left
 
 
+type Rotation
+    = Clockwise
+    | CounterClockwise
+
+
 type alias TileBag =
     List Shape
 
@@ -299,13 +304,16 @@ processInput game tetromino =
                         c
 
                 Input.RotateClockwise ->
-                    if canRotate game c then
-                        rotate c
+                    if canRotate game Clockwise c then
+                        rotate Clockwise c
                     else
                         c
 
                 Input.RotateCounterClockwise ->
-                    c
+                    if canRotate game CounterClockwise c then
+                        rotate CounterClockwise c
+                    else
+                        c
         )
         tetromino
 
@@ -365,31 +373,47 @@ fixRoundingErrors a =
     round a |> toFloat
 
 
-rotate : Tetromino -> Tetromino
-rotate tetromino =
+rotate : Rotation -> Tetromino -> Tetromino
+rotate rotation tetromino =
     let
         direction =
-            case tetromino.direction of
-                Up ->
-                    Right
+            case rotation of
+                Clockwise ->
+                    case tetromino.direction of
+                        Up ->
+                            Right
 
-                Right ->
-                    Down
+                        Right ->
+                            Down
 
-                Down ->
-                    Left
+                        Down ->
+                            Left
 
-                Left ->
-                    Up
+                        Left ->
+                            Up
+
+                CounterClockwise ->
+                    case tetromino.direction of
+                        Up ->
+                            Left
+
+                        Left ->
+                            Down
+
+                        Down ->
+                            Right
+
+                        Right ->
+                            Up
     in
     { tetromino | direction = direction }
 
 
-canRotate : Game -> Tetromino -> Bool
-canRotate game tetromino =
+canRotate : Game -> Rotation -> Tetromino -> Bool
+canRotate game rotation tetromino =
     let
         cells =
-            rotate tetromino
+            rotate rotation tetromino
                 |> points
                 |> List.map (\c -> add c tetromino.position)
     in
