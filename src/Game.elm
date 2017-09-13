@@ -265,11 +265,54 @@ stepGame delta game =
             { game
                 | interval = interval
                 , current = Tetromino game.nextPiece spawnPosition Up
-                , cells = toCells game.current ++ game.cells
+                , cells = addCells game.current game.cells
                 , nextPiece = p
                 , seed = seed
                 , tileBag = List.filter ((/=) p) bag
             }
+
+
+addCells : Tetromino -> List Cell -> List Cell
+addCells tetromino cells =
+    let
+        pieceCells =
+            toCells tetromino
+
+        checkRow row cells =
+            List.filter (\c -> Tuple.second c.position == row) cells
+                |> List.length
+                |> (==) 10
+
+        removeRow row cells =
+            List.map
+                (\c ->
+                    let
+                        ( _, y ) =
+                            c.position
+                    in
+                    if y == row then
+                        Nothing
+                    else if y > row then
+                        Just (moveDown c)
+                    else
+                        Just c
+                )
+                cells
+                |> List.filterMap identity
+    in
+    List.foldl
+        (\c cs ->
+            let
+                ( _, y ) =
+                    c.position
+            in
+            if checkRow y cs then
+                removeRow y cs
+            else
+                cs
+        )
+        (pieceCells ++ cells)
+        pieceCells
 
 
 stepCurrent : Game -> Tetromino -> Maybe Tetromino
@@ -281,9 +324,9 @@ stepCurrent game tetromino =
         Nothing
 
 
-moveDown : Tetromino -> Tetromino
-moveDown tetromino =
-    { tetromino | position = Tuple.mapSecond (\y -> y - 1) tetromino.position }
+moveDown : { a | position : Point } -> { a | position : Point }
+moveDown a =
+    { a | position = Tuple.mapSecond (\y -> y - 1) a.position }
 
 
 processInput : Game -> Tetromino -> List Input.Key -> Tetromino
