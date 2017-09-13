@@ -7,6 +7,7 @@ import GameStyles
 import Html exposing (Html, div)
 import Html.CssHelpers
 import Input
+import Point exposing (Point)
 import Random
 
 
@@ -59,10 +60,6 @@ type Rotation
 
 type alias TileBag =
     List Shape
-
-
-type alias Point =
-    ( Float, Float )
 
 
 type alias Cell =
@@ -176,13 +173,8 @@ toCells tetromino =
             Cell color position
     in
     points tetromino
-        |> List.map (add tetromino.position)
+        |> List.map (Point.add tetromino.position)
         |> List.map (toCell (colorForShape tetromino.shape))
-
-
-add : Point -> Point -> Point
-add ( ax, ay ) ( bx, by ) =
-    ( ax + bx, ay + by )
 
 
 
@@ -326,7 +318,7 @@ stepCurrent game tetromino =
 
 moveDown : { a | position : Point } -> { a | position : Point }
 moveDown a =
-    { a | position = Tuple.mapSecond (\y -> y - 1) a.position }
+    { a | position = Point.moveDown a.position }
 
 
 processInput : Game -> Tetromino -> List Input.Key -> Tetromino
@@ -336,13 +328,13 @@ processInput game tetromino =
             case k of
                 Input.Left ->
                     if canMoveLeft game c then
-                        { c | position = add ( -1, 0 ) c.position }
+                        { c | position = Point.add ( -1, 0 ) c.position }
                     else
                         c
 
                 Input.Right ->
                     if canMoveRight game c then
-                        { c | position = add ( 1, 0 ) c.position }
+                        { c | position = Point.add ( 1, 0 ) c.position }
                     else
                         c
 
@@ -401,11 +393,11 @@ rotatePoints direction shape =
     if direction == Up then
         points
     else
-        List.map (add offset) points
+        List.map (Point.add offset) points
             |> List.map toPolar
             |> List.map (Tuple.mapSecond (\a -> a - turns (0.25 * numOfTurns)))
             |> List.map fromPolar
-            |> List.map (add negativeOffset)
+            |> List.map (Point.add negativeOffset)
             |> List.map (\( x, y ) -> ( fixRoundingErrors x, fixRoundingErrors y ))
 
 
@@ -461,7 +453,7 @@ canRotate game rotation tetromino =
         cells =
             rotate rotation tetromino
                 |> points
-                |> List.map (\c -> add c tetromino.position)
+                |> List.map (\c -> Point.add c tetromino.position)
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -471,8 +463,8 @@ canMoveLeft game tetromino =
     let
         cells =
             points tetromino
-                |> List.map (add ( -1, 0 ))
-                |> List.map (\c -> add c tetromino.position)
+                |> List.map (Point.add ( -1, 0 ))
+                |> List.map (\c -> Point.add c tetromino.position)
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -482,8 +474,8 @@ canMoveRight game tetromino =
     let
         cells =
             points tetromino
-                |> List.map (add ( 1, 0 ))
-                |> List.map (\c -> add c tetromino.position)
+                |> List.map (Point.add ( 1, 0 ))
+                |> List.map (\c -> Point.add c tetromino.position)
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
@@ -493,8 +485,8 @@ canMoveLower game tetromino =
     let
         cells =
             points tetromino
-                |> List.map (add ( 0, -1 ))
-                |> List.map (\c -> add c tetromino.position)
+                |> List.map (Point.add ( 0, -1 ))
+                |> List.map (\c -> Point.add c tetromino.position)
     in
     List.all (\cell -> isInsideGrid cell && wouldCollide game cell) cells
 
