@@ -10,6 +10,7 @@ import Input
 import Point exposing (Point)
 import Random
 import Tetromino exposing (Direction, Shape(..), Tetromino)
+import TileBag exposing (TileBag)
 
 
 -- MODEL
@@ -22,16 +23,11 @@ type alias Game =
     , level : Level
     , interval : Float
     , tileBag : TileBag
-    , seed : Random.Seed
     }
 
 
 type alias Level =
     Int
-
-
-type alias TileBag =
-    List Shape
 
 
 type alias Cell =
@@ -44,20 +40,14 @@ initialGame : Game
 initialGame =
     let
         -- TODO: generate initialSeed from JS and pass through flags
-        seed0 =
-            Random.initialSeed 1234
+        bag =
+            TileBag.init (Random.initialSeed 1234)
 
-        ( initialShape, seed1 ) =
-            Random.step (nextPiece fullBag) seed0
+        ( initialShape, bag0 ) =
+            TileBag.pull bag
 
-        bag0 =
-            List.filter ((/=) initialShape) fullBag
-
-        ( nextShape, seed2 ) =
-            Random.step (nextPiece bag0) seed1
-
-        bag1 =
-            List.filter ((/=) nextShape) bag0
+        ( nextShape, bag1 ) =
+            TileBag.pull bag0
     in
     { current =
         Tetromino.init initialShape
@@ -66,13 +56,7 @@ initialGame =
     , level = 1
     , interval = 0
     , tileBag = bag1
-    , seed = Random.initialSeed 1234
     }
-
-
-fullBag : TileBag
-fullBag =
-    [ O, T, I, S, Z, J, L ]
 
 
 toCells : Tetromino -> List Cell
@@ -84,27 +68,6 @@ toCells tetromino =
     Tetromino.points tetromino
         |> List.map (Point.add (Tetromino.position tetromino))
         |> List.map (toCell (Tetromino.color tetromino))
-
-
-
--- GENERATORS
-
-
-nextPiece : TileBag -> Random.Generator Shape
-nextPiece tileBag =
-    Random.map (Maybe.withDefault O) (oneOf tileBag)
-
-
-oneOf : List a -> Random.Generator (Maybe a)
-oneOf list =
-    Random.map
-        (\i ->
-            List.indexedMap (,) list
-                |> List.filter (\( idx, _ ) -> idx == i)
-                |> List.map Tuple.second
-                |> List.head
-        )
-        (Random.int 0 (List.length list - 1))
 
 
 
@@ -154,22 +117,15 @@ stepGame delta game =
 
         Nothing ->
             let
-                bag =
-                    if List.isEmpty game.tileBag then
-                        fullBag
-                    else
-                        game.tileBag
-
-                ( p, seed ) =
-                    Random.step (nextPiece bag) game.seed
+                ( next, bag ) =
+                    TileBag.pull game.tileBag
             in
             { game
                 | interval = interval
                 , current = Tetromino.init game.nextPiece
                 , cells = addCells game.current game.cells
-                , nextPiece = p
-                , seed = seed
-                , tileBag = List.filter ((/=) p) bag
+                , nextPiece = next
+                , tileBag = bag
             }
 
 
