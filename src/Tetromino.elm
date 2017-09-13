@@ -1,12 +1,11 @@
 module Tetromino
     exposing
-        ( Direction(..)
+        ( Direction
         , Rotation(..)
         , Shape(..)
         , Tetromino
         , cell
         , color
-        , colorForShape
         , init
         , moveDown
         , moveLeft
@@ -14,7 +13,7 @@ module Tetromino
         , points
         , position
         , rotate
-        , tetrominoView
+        , view
         )
 
 import Collage
@@ -59,11 +58,6 @@ init shape position =
         , direction = Up
         , position = position
         }
-
-
-direction : Tetromino -> Direction
-direction (Tetromino { direction }) =
-    direction
 
 
 position : Tetromino -> Point
@@ -249,8 +243,8 @@ fixRoundingErrors a =
 -- VIEW
 
 
-tetrominoView : Float -> Tetromino -> Collage.Form
-tetrominoView cellSize (Tetromino { direction, shape }) =
+view : Float -> Tetromino -> Collage.Form
+view cellSize (Tetromino { direction, shape }) =
     rotatePoints direction shape
         |> List.map
             (\( x, y ) ->

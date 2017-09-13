@@ -9,7 +9,7 @@ import Html.CssHelpers
 import Input
 import Point exposing (Point)
 import Random
-import Tetromino exposing (Direction(..), Shape(..), Tetromino)
+import Tetromino exposing (Direction, Shape(..), Tetromino)
 
 
 -- MODEL
@@ -365,7 +365,7 @@ nextPieceView { nextPiece } =
         Collage.collage size
             size
             [ backgroundView size size
-            , Tetromino.tetrominoView cellSize (Tetromino.init nextPiece ( 0, 0 ))
+            , Tetromino.view cellSize (Tetromino.init nextPiece ( 0, 0 ))
             ]
 
 
@@ -418,7 +418,7 @@ position ( posX, posY ) =
 
 ghostView : Game -> Tetromino -> Collage.Form
 ghostView game tetromino =
-    Tetromino.tetrominoView cellSize tetromino
+    Tetromino.view cellSize tetromino
         |> Collage.alpha 0.375
         |> (lowestPosition game tetromino
                 |> Tetromino.position
@@ -451,5 +451,5 @@ currentView current =
         y =
             (posY * cellSize) + (cellSize / 2)
     in
-    Tetromino.tetrominoView cellSize current
+    Tetromino.view cellSize current
         |> Collage.move ( x, y )
