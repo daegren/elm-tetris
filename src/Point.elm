@@ -1,4 +1,4 @@
-module Point exposing (Point, add, moveDown)
+module Point exposing (Point, add, moveDown, moveLeft, moveRight)
 
 {-| Helpers for representing a point in a 2d grid system
 -}
@@ -30,3 +30,23 @@ add ( ax, ay ) ( bx, by ) =
 moveDown : Point -> Point
 moveDown =
     Tuple.mapSecond (\y -> y - 1)
+
+
+{-| Move a point to the left on the x-axis
+
+    (-1, 0) == moveLeft (0, 0)
+
+-}
+moveLeft : Point -> Point
+moveLeft =
+    Tuple.mapFirst (\x -> x - 1)
+
+
+{-| Move a point to the right on the x-axis
+
+    (1, 0) == moveRight (0, 0)
+
+-}
+moveRight : Point -> Point
+moveRight =
+    Tuple.mapFirst (\x -> x + 1)
