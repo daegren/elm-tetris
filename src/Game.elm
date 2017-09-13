@@ -60,7 +60,7 @@ initialGame =
             List.filter ((/=) nextShape) bag0
     in
     { current =
-        Tetromino.init initialShape spawnPosition
+        Tetromino.init initialShape
     , nextPiece = nextShape
     , cells = []
     , level = 1
@@ -73,11 +73,6 @@ initialGame =
 fullBag : TileBag
 fullBag =
     [ O, T, I, S, Z, J, L ]
-
-
-spawnPosition : Point
-spawnPosition =
-    ( -1, 9 )
 
 
 toCells : Tetromino -> List Cell
@@ -170,7 +165,7 @@ stepGame delta game =
             in
             { game
                 | interval = interval
-                , current = Tetromino.init game.nextPiece spawnPosition
+                , current = Tetromino.init game.nextPiece
                 , cells = addCells game.current game.cells
                 , nextPiece = p
                 , seed = seed
@@ -365,7 +360,7 @@ nextPieceView { nextPiece } =
         Collage.collage size
             size
             [ backgroundView size size
-            , Tetromino.view cellSize (Tetromino.init nextPiece ( 0, 0 ))
+            , Tetromino.view cellSize (Tetromino.init nextPiece)
             ]
 
 

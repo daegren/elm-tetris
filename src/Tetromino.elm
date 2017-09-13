@@ -51,13 +51,18 @@ type Rotation
     | CounterClockwise
 
 
-init : Shape -> Point -> Tetromino
-init shape position =
+init : Shape -> Tetromino
+init shape =
     Tetromino
         { shape = shape
         , direction = Up
-        , position = position
+        , position = spawnPosition
         }
+
+
+spawnPosition : Point
+spawnPosition =
+    ( -1, 9 )
 
 
 position : Tetromino -> Point
