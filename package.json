@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "elm test",
     "start": "webpack-dev-server"
   },
   "author": "",
@@ -15,6 +15,7 @@
   "devDependencies": {
     "css-loader": "^0.28.5",
     "elm-css-webpack-loader": "^3.2.0",
+    "elm-test": "^0.18.2",
     "elm-webpack-loader": "^4.3.1",
     "style-loader": "^0.18.2",
     "webpack": "^3.5.5",
