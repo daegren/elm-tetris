@@ -23,6 +23,7 @@ type alias Game =
     , hasHeld : Bool
     , cells : List Cell
     , score : Int
+    , lines : Int
     , level : Level
     , interval : Float
     , tileBag : TileBag
@@ -60,6 +61,7 @@ initialGame =
     , cells = []
     , level = 1
     , score = 0
+    , lines = 0
     , interval = 0
     , tileBag = bag1
     }
@@ -127,17 +129,17 @@ stepGame delta game =
                 cells =
                     addCells game.current game.cells
 
-                numRows =
+                lines =
                     fullRows -10 cells
 
                 score =
-                    if numRows == 1 then
+                    if lines == 1 then
                         100 * game.level
-                    else if numRows == 2 then
+                    else if lines == 2 then
                         300 * game.level
-                    else if numRows == 3 then
+                    else if lines == 3 then
                         500 * game.level
-                    else if numRows == 4 then
+                    else if lines == 4 then
                         800 * game.level
                     else
                         0
@@ -148,6 +150,7 @@ stepGame delta game =
                 , cells = checkCells -10 cells
                 , hasHeld = False
                 , score = game.score + score
+                , lines = game.lines + lines
                 , nextPiece = next
                 , tileBag = bag
             }
@@ -376,8 +379,26 @@ view game =
             [ nextPieceView game
             , heldPieceView game
             , scoreView game
+            , lineView game
+            , levelView game
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+levelView : Game -> Html msg
+levelView { level } =
+    div []
+        [ text "Level: "
+        , text <| toString level
+        ]
+
+
+lineView : Game -> Html msg
+lineView { lines } =
+    div []
+        [ text "Lines: "
+        , text <| toString lines
         ]
 
 
