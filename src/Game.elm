@@ -22,6 +22,7 @@ type alias Game =
     , heldPiece : Maybe Shape
     , hasHeld : Bool
     , cells : List Cell
+    , score : Int
     , level : Level
     , interval : Float
     , tileBag : TileBag
@@ -58,6 +59,7 @@ initialGame =
     , hasHeld = False
     , cells = []
     , level = 1
+    , score = 0
     , interval = 0
     , tileBag = bag1
     }
@@ -121,12 +123,31 @@ stepGame delta game =
             let
                 ( next, bag ) =
                     TileBag.pull game.tileBag
+
+                cells =
+                    addCells game.current game.cells
+
+                numRows =
+                    fullRows -10 cells
+
+                score =
+                    if numRows == 1 then
+                        100 * game.level
+                    else if numRows == 2 then
+                        300 * game.level
+                    else if numRows == 3 then
+                        500 * game.level
+                    else if numRows == 4 then
+                        800 * game.level
+                    else
+                        0
             in
             { game
                 | interval = interval
                 , current = Tetromino.init game.nextPiece
-                , cells = addCells game.current game.cells
+                , cells = checkCells -10 cells
                 , hasHeld = False
+                , score = game.score + score
                 , nextPiece = next
                 , tileBag = bag
             }
@@ -141,7 +162,29 @@ addCells tetromino cells =
         getNumberOfCells row cells =
             List.filter (\c -> Tuple.second c.position == row) cells
                 |> List.length
+    in
+    pieceCells ++ cells
 
+
+getNumberOfCells : Float -> List Cell -> Int
+getNumberOfCells row cells =
+    List.filter (\c -> Tuple.second c.position == row) cells
+        |> List.length
+
+
+fullRows : Float -> List Cell -> Int
+fullRows row cells =
+    if getNumberOfCells row cells == 10 then
+        1 + fullRows (row + 1) cells
+    else if getNumberOfCells row cells /= 0 then
+        0 + fullRows (row + 1) cells
+    else
+        0
+
+
+checkCells : Float -> List Cell -> List Cell
+checkCells row cells =
+    let
         removeRow row cells =
             List.map
                 (\c ->
@@ -159,19 +202,15 @@ addCells tetromino cells =
                 cells
                 |> List.filterMap identity
 
-        checkCells row cells =
-            let
-                numberOfCells =
-                    getNumberOfCells row cells
-            in
-            if numberOfCells == 10 then
-                checkCells row (removeRow row cells)
-            else if numberOfCells == 0 then
-                cells
-            else
-                checkCells (row + 1) cells
+        numberOfCells =
+            getNumberOfCells row cells
     in
-    checkCells -10 (pieceCells ++ cells)
+    if numberOfCells == 10 then
+        checkCells row (removeRow row cells)
+    else if numberOfCells /= 0 then
+        checkCells (row + 1) cells
+    else
+        cells
 
 
 stepCurrent : Game -> Tetromino -> Maybe Tetromino
@@ -336,8 +375,17 @@ view game =
         [ div []
             [ nextPieceView game
             , heldPieceView game
+            , scoreView game
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+scoreView : Game -> Html msg
+scoreView game =
+    div []
+        [ text "Score: "
+        , text <| toString game.score
         ]
 
 
