@@ -424,16 +424,7 @@ heldPieceView { heldPiece } =
     in
     div []
         [ text "Hold Piece"
-        , Element.toHtml <|
-            Collage.collage size size <|
-                [ backgroundView size size
-                , case heldPiece of
-                    Just piece ->
-                        Tetromino.view cellSize (Tetromino.init piece)
-
-                    Nothing ->
-                        Element.empty |> Collage.toForm
-                ]
+        , piecePreviewView heldPiece
         ]
 
 
@@ -445,13 +436,45 @@ nextPieceView { nextPiece } =
     in
     div []
         [ text "Next Piece"
-        , Element.toHtml <|
-            Collage.collage size
-                size
-                [ backgroundView size size
-                , Tetromino.view cellSize (Tetromino.init nextPiece)
-                ]
+        , piecePreviewView (Just nextPiece)
         ]
+
+
+piecePreviewView : Maybe Shape -> Html msg
+piecePreviewView maybeShape =
+    let
+        size =
+            5 * cellSize
+    in
+    Element.toHtml <|
+        Collage.collage size size <|
+            [ backgroundView size size
+            , case maybeShape of
+                Just shape ->
+                    let
+                        offset =
+                            previewOffset shape
+                                |> (\( x, y ) -> ( x * cellSize, y * cellSize ))
+                    in
+                    Tetromino.view cellSize (Tetromino.init shape)
+                        |> Collage.move offset
+
+                Nothing ->
+                    Element.empty |> Collage.toForm
+            ]
+
+
+previewOffset : Shape -> ( Float, Float )
+previewOffset shape =
+    case shape of
+        I ->
+            ( 0.5, 0 )
+
+        O ->
+            ( 0.5, 0.5 )
+
+        _ ->
+            ( 0, -0.5 )
 
 
 playField : Game -> Html msg
