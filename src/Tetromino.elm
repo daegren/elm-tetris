@@ -57,13 +57,21 @@ init shape =
     Tetromino
         { shape = shape
         , direction = Up
-        , position = spawnPosition
+        , position = spawnPosition shape
         }
 
 
-spawnPosition : Point
-spawnPosition =
-    ( -1, 9 )
+spawnPosition : Shape -> Point
+spawnPosition shape =
+    case shape of
+        I ->
+            ( 0, 10 )
+
+        O ->
+            ( 0, 10 )
+
+        _ ->
+            ( -1, 10 )
 
 
 position : Tetromino -> Point
