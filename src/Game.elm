@@ -123,12 +123,31 @@ stepGame delta game =
             let
                 ( next, bag ) =
                     TileBag.pull game.tileBag
+
+                cells =
+                    addCells game.current game.cells
+
+                numRows =
+                    fullRows -10 cells
+
+                score =
+                    if numRows == 1 then
+                        100 * game.level
+                    else if numRows == 2 then
+                        300 * game.level
+                    else if numRows == 3 then
+                        500 * game.level
+                    else if numRows == 4 then
+                        800 * game.level
+                    else
+                        0
             in
             { game
                 | interval = interval
                 , current = Tetromino.init game.nextPiece
-                , cells = addCells game.current game.cells
+                , cells = checkCells -10 cells
                 , hasHeld = False
+                , score = game.score + score
                 , nextPiece = next
                 , tileBag = bag
             }
@@ -144,16 +163,28 @@ addCells tetromino cells =
             List.filter (\c -> Tuple.second c.position == row) cells
                 |> List.length
     in
-    checkCells -10 (pieceCells ++ cells)
+    pieceCells ++ cells
+
+
+getNumberOfCells : Float -> List Cell -> Int
+getNumberOfCells row cells =
+    List.filter (\c -> Tuple.second c.position == row) cells
+        |> List.length
+
+
+fullRows : Float -> List Cell -> Int
+fullRows row cells =
+    if getNumberOfCells row cells == 10 then
+        1 + fullRows (row + 1) cells
+    else if getNumberOfCells row cells /= 0 then
+        0 + fullRows (row + 1) cells
+    else
+        0
 
 
 checkCells : Float -> List Cell -> List Cell
 checkCells row cells =
     let
-        getNumberOfCells row cells =
-            List.filter (\c -> Tuple.second c.position == row) cells
-                |> List.length
-
         removeRow row cells =
             List.map
                 (\c ->
@@ -176,10 +207,10 @@ checkCells row cells =
     in
     if numberOfCells == 10 then
         checkCells row (removeRow row cells)
-    else if numberOfCells == 0 then
-        cells
-    else
+    else if numberOfCells /= 0 then
         checkCells (row + 1) cells
+    else
+        cells
 
 
 stepCurrent : Game -> Tetromino -> Maybe Tetromino
