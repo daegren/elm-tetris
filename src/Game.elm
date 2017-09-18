@@ -4,7 +4,7 @@ import Collage
 import Color
 import Element
 import GameStyles
-import Html exposing (Html, div)
+import Html exposing (Html, div, text)
 import Html.CssHelpers
 import Input
 import Point exposing (Point)
@@ -19,6 +19,8 @@ import TileBag exposing (TileBag)
 type alias Game =
     { current : Tetromino
     , nextPiece : Shape
+    , heldPiece : Maybe Shape
+    , hasHeld : Bool
     , cells : List Cell
     , level : Level
     , interval : Float
@@ -52,6 +54,8 @@ initialGame =
     { current =
         Tetromino.init initialShape
     , nextPiece = nextShape
+    , heldPiece = Nothing
+    , hasHeld = False
     , cells = []
     , level = 1
     , interval = 0
@@ -84,11 +88,9 @@ tickGame delta keys game =
     let
         currentInterval =
             game.interval + delta
-
-        newGame =
-            stepGame delta game
     in
-    { newGame | current = processInput newGame newGame.current keys }
+    processInput keys game
+        |> stepGame delta
 
 
 stepGame : Float -> Game -> Game
@@ -124,6 +126,7 @@ stepGame delta game =
                 | interval = interval
                 , current = Tetromino.init game.nextPiece
                 , cells = addCells game.current game.cells
+                , hasHeld = False
                 , nextPiece = next
                 , tileBag = bag
             }
@@ -185,39 +188,69 @@ moveDown a =
     { a | position = Point.moveDown a.position }
 
 
-processInput : Game -> Tetromino -> List Input.Key -> Tetromino
-processInput game tetromino =
+processInput : List Input.Key -> Game -> Game
+processInput keys game =
     List.foldl
-        (\k c ->
+        (\k game ->
             case k of
                 Input.Left ->
-                    if canMoveLeft game c then
-                        Tetromino.moveLeft c
+                    if canMoveLeft game game.current then
+                        { game | current = Tetromino.moveLeft game.current }
                     else
-                        c
+                        game
 
                 Input.Right ->
-                    if canMoveRight game c then
-                        Tetromino.moveRight c
+                    if canMoveRight game game.current then
+                        { game | current = Tetromino.moveRight game.current }
                     else
-                        c
+                        game
 
                 Input.RotateClockwise ->
-                    if canRotate game Tetromino.Clockwise c then
-                        Tetromino.rotate Tetromino.Clockwise c
+                    if canRotate game Tetromino.Clockwise game.current then
+                        { game | current = Tetromino.rotate Tetromino.Clockwise game.current }
                     else
-                        c
+                        game
 
                 Input.RotateCounterClockwise ->
-                    if canRotate game Tetromino.CounterClockwise c then
-                        Tetromino.rotate Tetromino.CounterClockwise c
+                    if canRotate game Tetromino.CounterClockwise game.current then
+                        { game | current = Tetromino.rotate Tetromino.CounterClockwise game.current }
                     else
-                        c
+                        game
 
                 Input.HardDrop ->
-                    lowestPosition game c
+                    { game | current = lowestPosition game game.current }
+
+                Input.Hold ->
+                    if not game.hasHeld then
+                        swapHeld game
+                    else
+                        game
         )
-        tetromino
+        game
+        keys
+
+
+swapHeld : Game -> Game
+swapHeld game =
+    let
+        newGame =
+            case game.heldPiece of
+                Just piece ->
+                    { game | current = Tetromino.init piece, heldPiece = Just (Tetromino.shape game.current) }
+
+                Nothing ->
+                    let
+                        ( nextPiece, bag ) =
+                            TileBag.pull game.tileBag
+                    in
+                    { game
+                        | current = Tetromino.init game.nextPiece
+                        , nextPiece = nextPiece
+                        , heldPiece = Just (Tetromino.shape game.current)
+                        , tileBag = bag
+                    }
+    in
+    { newGame | hasHeld = True }
 
 
 canRotate : Game -> Tetromino.Rotation -> Tetromino -> Bool
@@ -300,8 +333,32 @@ lowestPosition game tetromino =
 view : Game -> Html msg
 view game =
     div [ id [ GameStyles.GameContainer ] ]
-        [ nextPieceView game
+        [ div []
+            [ nextPieceView game
+            , heldPieceView game
+            ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+heldPieceView : Game -> Html msg
+heldPieceView { heldPiece } =
+    let
+        size =
+            5 * cellSize
+    in
+    div []
+        [ text "Hold Piece"
+        , Element.toHtml <|
+            Collage.collage size size <|
+                [ backgroundView size size
+                , case heldPiece of
+                    Just piece ->
+                        Tetromino.view cellSize (Tetromino.init piece)
+
+                    Nothing ->
+                        Element.empty |> Collage.toForm
+                ]
         ]
 
 
@@ -311,12 +368,15 @@ nextPieceView { nextPiece } =
         size =
             5 * cellSize
     in
-    Element.toHtml <|
-        Collage.collage size
-            size
-            [ backgroundView size size
-            , Tetromino.view cellSize (Tetromino.init nextPiece)
-            ]
+    div []
+        [ text "Next Piece"
+        , Element.toHtml <|
+            Collage.collage size
+                size
+                [ backgroundView size size
+                , Tetromino.view cellSize (Tetromino.init nextPiece)
+                ]
+        ]
 
 
 playField : Game -> Html msg
@@ -329,8 +389,7 @@ playField game =
             10 * cellSize
     in
     Element.toHtml <|
-        Collage.collage width
-            height
+        Collage.collage width height <|
             [ backgroundView width height
             , currentView game.current
             , ghostView game game.current

@@ -132,6 +132,10 @@ mapKey keyCode =
         32 ->
             Just Input.HardDrop
 
+        -- z
+        90 ->
+            Just Input.Hold
+
         _ ->
             let
                 _ =
