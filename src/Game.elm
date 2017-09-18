@@ -263,7 +263,10 @@ processInput keys game =
                         game
 
                 Input.HardDrop ->
-                    { game | current = lowestPosition game game.current }
+                    { game
+                        | current = lowestPosition game game.current
+                        , interval = game.interval + speedForLevel (level game)
+                    }
 
                 Input.Hold ->
                     if not game.hasHeld then
