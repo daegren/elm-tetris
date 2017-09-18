@@ -23,7 +23,7 @@ type alias Game =
     , hasHeld : Bool
     , cells : List Cell
     , score : Int
-    , level : Level
+    , lines : Int
     , interval : Float
     , tileBag : TileBag
     }
@@ -58,8 +58,8 @@ initialGame =
     , heldPiece = Nothing
     , hasHeld = False
     , cells = []
-    , level = 1
     , score = 0
+    , lines = 0
     , interval = 0
     , tileBag = bag1
     }
@@ -80,9 +80,14 @@ toCells tetromino =
 -- UPDATE
 
 
+level : Game -> Level
+level { lines } =
+    (floor <| toFloat lines / 10) + 1
+
+
 speedForLevel : Level -> Float
 speedForLevel level =
-    250
+    -50 * toFloat level + 1000
 
 
 tickGame : Float -> List Input.Key -> Game -> Game
@@ -102,12 +107,12 @@ stepGame delta game =
             game.interval + delta
 
         shouldStep =
-            currentInterval > speedForLevel game.level
+            currentInterval > speedForLevel (level game)
 
         ( maybeCurrent, interval ) =
             if shouldStep then
                 ( stepCurrent game game.current
-                , currentInterval - speedForLevel game.level
+                , currentInterval - speedForLevel (level game)
                 )
             else
                 ( Just game.current, currentInterval )
@@ -127,18 +132,18 @@ stepGame delta game =
                 cells =
                     addCells game.current game.cells
 
-                numRows =
+                lines =
                     fullRows -10 cells
 
                 score =
-                    if numRows == 1 then
-                        100 * game.level
-                    else if numRows == 2 then
-                        300 * game.level
-                    else if numRows == 3 then
-                        500 * game.level
-                    else if numRows == 4 then
-                        800 * game.level
+                    if lines == 1 then
+                        100 * level game
+                    else if lines == 2 then
+                        300 * level game
+                    else if lines == 3 then
+                        500 * level game
+                    else if lines == 4 then
+                        800 * level game
                     else
                         0
             in
@@ -148,6 +153,7 @@ stepGame delta game =
                 , cells = checkCells -10 cells
                 , hasHeld = False
                 , score = game.score + score
+                , lines = game.lines + lines
                 , nextPiece = next
                 , tileBag = bag
             }
@@ -257,7 +263,10 @@ processInput keys game =
                         game
 
                 Input.HardDrop ->
-                    { game | current = lowestPosition game game.current }
+                    { game
+                        | current = lowestPosition game game.current
+                        , interval = game.interval + speedForLevel (level game)
+                    }
 
                 Input.Hold ->
                     if not game.hasHeld then
@@ -376,8 +385,26 @@ view game =
             [ nextPieceView game
             , heldPieceView game
             , scoreView game
+            , lineView game
+            , levelView game
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+levelView : Game -> Html msg
+levelView game =
+    div []
+        [ text "Level: "
+        , text <| toString <| level game
+        ]
+
+
+lineView : Game -> Html msg
+lineView { lines } =
+    div []
+        [ text "Lines: "
+        , text <| toString lines
         ]
 
 
