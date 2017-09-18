@@ -4,7 +4,7 @@ import Collage
 import Color
 import Element
 import GameStyles
-import Html exposing (Html, div)
+import Html exposing (Html, div, text)
 import Html.CssHelpers
 import Input
 import Point exposing (Point)
@@ -19,6 +19,7 @@ import TileBag exposing (TileBag)
 type alias Game =
     { current : Tetromino
     , nextPiece : Shape
+    , heldPiece : Maybe Shape
     , cells : List Cell
     , level : Level
     , interval : Float
@@ -52,6 +53,7 @@ initialGame =
     { current =
         Tetromino.init initialShape
     , nextPiece = nextShape
+    , heldPiece = Nothing
     , cells = []
     , level = 1
     , interval = 0
@@ -300,8 +302,32 @@ lowestPosition game tetromino =
 view : Game -> Html msg
 view game =
     div [ id [ GameStyles.GameContainer ] ]
-        [ nextPieceView game
+        [ div []
+            [ nextPieceView game
+            , heldPieceView game
+            ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+heldPieceView : Game -> Html msg
+heldPieceView { heldPiece } =
+    let
+        size =
+            5 * cellSize
+    in
+    div []
+        [ text "Hold Piece"
+        , Element.toHtml <|
+            Collage.collage size size <|
+                [ backgroundView size size
+                , case heldPiece of
+                    Just piece ->
+                        Tetromino.view cellSize (Tetromino.init piece)
+
+                    Nothing ->
+                        Element.empty |> Collage.toForm
+                ]
         ]
 
 
@@ -311,12 +337,15 @@ nextPieceView { nextPiece } =
         size =
             5 * cellSize
     in
-    Element.toHtml <|
-        Collage.collage size
-            size
-            [ backgroundView size size
-            , Tetromino.view cellSize (Tetromino.init nextPiece)
-            ]
+    div []
+        [ text "Next Piece"
+        , Element.toHtml <|
+            Collage.collage size
+                size
+                [ backgroundView size size
+                , Tetromino.view cellSize (Tetromino.init nextPiece)
+                ]
+        ]
 
 
 playField : Game -> Html msg
@@ -329,8 +358,7 @@ playField game =
             10 * cellSize
     in
     Element.toHtml <|
-        Collage.collage width
-            height
+        Collage.collage width height <|
             [ backgroundView width height
             , currentView game.current
             , ghostView game game.current
