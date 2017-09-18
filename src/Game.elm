@@ -97,7 +97,7 @@ update : Msg -> Game -> Game
 update msg game =
     case msg of
         StartGame ->
-            { game | state = Playing }
+            { initialGame | state = Playing }
 
 
 level : Game -> Level
@@ -153,38 +153,41 @@ stepGame delta game =
             }
 
         Nothing ->
-            let
-                ( next, bag ) =
-                    TileBag.pull game.tileBag
+            if Tetromino.isAtSpawn game.current then
+                { game | state = GameOver }
+            else
+                let
+                    ( next, bag ) =
+                        TileBag.pull game.tileBag
 
-                cells =
-                    addCells game.current game.cells
+                    cells =
+                        addCells game.current game.cells
 
-                lines =
-                    fullRows -10 cells
+                    lines =
+                        fullRows -10 cells
 
-                score =
-                    if lines == 1 then
-                        100 * level game
-                    else if lines == 2 then
-                        300 * level game
-                    else if lines == 3 then
-                        500 * level game
-                    else if lines == 4 then
-                        800 * level game
-                    else
-                        0
-            in
-            { game
-                | interval = interval
-                , current = Tetromino.init game.nextPiece
-                , cells = checkCells -10 cells
-                , hasHeld = False
-                , score = game.score + score
-                , lines = game.lines + lines
-                , nextPiece = next
-                , tileBag = bag
-            }
+                    score =
+                        if lines == 1 then
+                            100 * level game
+                        else if lines == 2 then
+                            300 * level game
+                        else if lines == 3 then
+                            500 * level game
+                        else if lines == 4 then
+                            800 * level game
+                        else
+                            0
+                in
+                { game
+                    | interval = interval
+                    , current = Tetromino.init game.nextPiece
+                    , cells = checkCells -10 cells
+                    , hasHeld = False
+                    , score = game.score + score
+                    , lines = game.lines + lines
+                    , nextPiece = next
+                    , tileBag = bag
+                }
 
 
 addCells : Tetromino -> List Cell -> List Cell
@@ -423,15 +426,27 @@ view game =
 
 overlayView : Game -> Html Msg
 overlayView game =
-    if game.state == NewGame then
-        div [ id [ GameStyles.Overlay ] ]
-            [ div [ class [ GameStyles.Title ] ] [ text "Welcome to Elm Tetris!" ]
-            , div [ class [ GameStyles.Actions ] ]
-                [ button [ onClick StartGame ] [ text "New Game" ]
+    case game.state of
+        NewGame ->
+            div [ id [ GameStyles.Overlay ] ]
+                [ div [ class [ GameStyles.Title ] ] [ text "Welcome to Elm Tetris!" ]
+                , div [ class [ GameStyles.Actions ] ]
+                    [ button [ onClick StartGame ] [ text "New Game" ]
+                    ]
                 ]
-            ]
-    else
-        div [] []
+
+        GameOver ->
+            div [ id [ GameStyles.Overlay ] ]
+                [ div [ class [ GameStyles.Title ] ] [ text "Game Over!" ]
+                , div [ class [ GameStyles.Details ] ]
+                    [ scoreView game ]
+                , div [ class [ GameStyles.Actions ] ]
+                    [ button [ onClick StartGame ] [ text "New Game" ]
+                    ]
+                ]
+
+        Playing ->
+            div [] []
 
 
 levelView : Game -> Html msg

@@ -14,6 +14,7 @@ type ID
 type Class
     = Title
     | Actions
+    | Details
 
 
 ns : String
@@ -53,6 +54,8 @@ css =
                         [ button [ fontSize (em 1.5) ]
                         ]
                     ]
+                , class Details
+                    [ fontSize (em 1.5) ]
                 ]
             ]
         ]

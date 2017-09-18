@@ -7,6 +7,7 @@ module Tetromino
         , cell
         , color
         , init
+        , isAtSpawn
         , moveDown
         , moveLeft
         , moveRight
@@ -72,6 +73,11 @@ spawnPosition shape =
 
         _ ->
             ( -1, 10 )
+
+
+isAtSpawn : Tetromino -> Bool
+isAtSpawn (Tetromino { position, shape }) =
+    position == spawnPosition shape
 
 
 position : Tetromino -> Point
