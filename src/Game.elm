@@ -143,6 +143,16 @@ addCells tetromino cells =
         getNumberOfCells row cells =
             List.filter (\c -> Tuple.second c.position == row) cells
                 |> List.length
+    in
+    checkCells -10 (pieceCells ++ cells)
+
+
+checkCells : Float -> List Cell -> List Cell
+checkCells row cells =
+    let
+        getNumberOfCells row cells =
+            List.filter (\c -> Tuple.second c.position == row) cells
+                |> List.length
 
         removeRow row cells =
             List.map
@@ -161,19 +171,15 @@ addCells tetromino cells =
                 cells
                 |> List.filterMap identity
 
-        checkCells row cells =
-            let
-                numberOfCells =
-                    getNumberOfCells row cells
-            in
-            if numberOfCells == 10 then
-                checkCells row (removeRow row cells)
-            else if numberOfCells == 0 then
-                cells
-            else
-                checkCells (row + 1) cells
+        numberOfCells =
+            getNumberOfCells row cells
     in
-    checkCells -10 (pieceCells ++ cells)
+    if numberOfCells == 10 then
+        checkCells row (removeRow row cells)
+    else if numberOfCells == 0 then
+        cells
+    else
+        checkCells (row + 1) cells
 
 
 stepCurrent : Game -> Tetromino -> Maybe Tetromino
