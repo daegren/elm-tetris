@@ -13,6 +13,7 @@ module Tetromino
         , points
         , position
         , rotate
+        , shape
         , view
         )
 
@@ -68,6 +69,11 @@ spawnPosition =
 position : Tetromino -> Point
 position (Tetromino { position }) =
     position
+
+
+shape : Tetromino -> Shape
+shape (Tetromino { shape }) =
+    shape
 
 
 cellsForShape : Shape -> List Point

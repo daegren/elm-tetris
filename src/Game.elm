@@ -86,11 +86,9 @@ tickGame delta keys game =
     let
         currentInterval =
             game.interval + delta
-
-        newGame =
-            stepGame delta game
     in
-    { newGame | current = processInput newGame newGame.current keys }
+    processInput keys game
+        |> stepGame delta
 
 
 stepGame : Float -> Game -> Game
@@ -187,42 +185,52 @@ moveDown a =
     { a | position = Point.moveDown a.position }
 
 
-processInput : Game -> Tetromino -> List Input.Key -> Tetromino
-processInput game tetromino =
+processInput : List Input.Key -> Game -> Game
+processInput keys game =
     List.foldl
-        (\k c ->
+        (\k game ->
             case k of
                 Input.Left ->
-                    if canMoveLeft game c then
-                        Tetromino.moveLeft c
+                    if canMoveLeft game game.current then
+                        { game | current = Tetromino.moveLeft game.current }
                     else
-                        c
+                        game
 
                 Input.Right ->
-                    if canMoveRight game c then
-                        Tetromino.moveRight c
+                    if canMoveRight game game.current then
+                        { game | current = Tetromino.moveRight game.current }
                     else
-                        c
+                        game
 
                 Input.RotateClockwise ->
-                    if canRotate game Tetromino.Clockwise c then
-                        Tetromino.rotate Tetromino.Clockwise c
+                    if canRotate game Tetromino.Clockwise game.current then
+                        { game | current = Tetromino.rotate Tetromino.Clockwise game.current }
                     else
-                        c
+                        game
 
                 Input.RotateCounterClockwise ->
-                    if canRotate game Tetromino.CounterClockwise c then
-                        Tetromino.rotate Tetromino.CounterClockwise c
+                    if canRotate game Tetromino.CounterClockwise game.current then
+                        { game | current = Tetromino.rotate Tetromino.CounterClockwise game.current }
                     else
-                        c
+                        game
 
                 Input.HardDrop ->
-                    lowestPosition game c
+                    { game | current = lowestPosition game game.current }
 
                 Input.Hold ->
-                    c
+                    case game.heldPiece of
+                        Just piece ->
+                            { game | current = Tetromino.init piece, heldPiece = Just (Tetromino.shape game.current) }
+
+                        Nothing ->
+                            let
+                                ( nextPiece, bag ) =
+                                    TileBag.pull game.tileBag
+                            in
+                            { game | current = Tetromino.init nextPiece, heldPiece = Just (Tetromino.shape game.current) }
         )
-        tetromino
+        game
+        keys
 
 
 canRotate : Game -> Tetromino.Rotation -> Tetromino -> Bool
