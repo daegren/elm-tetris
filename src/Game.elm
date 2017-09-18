@@ -24,7 +24,6 @@ type alias Game =
     , cells : List Cell
     , score : Int
     , lines : Int
-    , level : Level
     , interval : Float
     , tileBag : TileBag
     }
@@ -59,7 +58,6 @@ initialGame =
     , heldPiece = Nothing
     , hasHeld = False
     , cells = []
-    , level = 1
     , score = 0
     , lines = 0
     , interval = 0
@@ -82,9 +80,14 @@ toCells tetromino =
 -- UPDATE
 
 
+level : Game -> Level
+level { lines } =
+    (floor <| toFloat lines / 10) + 1
+
+
 speedForLevel : Level -> Float
 speedForLevel level =
-    250
+    -50 * toFloat level + 1000
 
 
 tickGame : Float -> List Input.Key -> Game -> Game
@@ -104,12 +107,12 @@ stepGame delta game =
             game.interval + delta
 
         shouldStep =
-            currentInterval > speedForLevel game.level
+            currentInterval > speedForLevel (level game)
 
         ( maybeCurrent, interval ) =
             if shouldStep then
                 ( stepCurrent game game.current
-                , currentInterval - speedForLevel game.level
+                , currentInterval - speedForLevel (level game)
                 )
             else
                 ( Just game.current, currentInterval )
@@ -134,13 +137,13 @@ stepGame delta game =
 
                 score =
                     if lines == 1 then
-                        100 * game.level
+                        100 * level game
                     else if lines == 2 then
-                        300 * game.level
+                        300 * level game
                     else if lines == 3 then
-                        500 * game.level
+                        500 * level game
                     else if lines == 4 then
-                        800 * game.level
+                        800 * level game
                     else
                         0
             in
@@ -387,10 +390,10 @@ view game =
 
 
 levelView : Game -> Html msg
-levelView { level } =
+levelView game =
     div []
         [ text "Level: "
-        , text <| toString level
+        , text <| toString <| level game
         ]
 
 
