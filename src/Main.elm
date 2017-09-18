@@ -69,6 +69,7 @@ type Msg
     | Tick Time.Time
     | KeyDown Keyboard.KeyCode
     | KeyUp Keyboard.KeyCode
+    | GameMsg Game.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -107,6 +108,9 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        GameMsg subMsg ->
+            ( { model | game = Game.update subMsg model.game }, Cmd.none )
 
 
 mapKey : Keyboard.KeyCode -> Maybe Input.Key
@@ -159,4 +163,4 @@ mapKey keyCode =
 view : Model -> Html Msg
 view model =
     div []
-        [ Game.view model.game ]
+        [ Html.map GameMsg <| Game.view model.game ]

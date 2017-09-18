@@ -4,8 +4,9 @@ import Collage
 import Color
 import Element
 import GameStyles
-import Html exposing (Html, div, text)
+import Html exposing (Html, button, div, text)
 import Html.CssHelpers
+import Html.Events exposing (onClick)
 import Input
 import Point exposing (Point)
 import Random
@@ -26,7 +27,14 @@ type alias Game =
     , lines : Int
     , interval : Float
     , tileBag : TileBag
+    , state : State
     }
+
+
+type State
+    = NewGame
+    | Playing
+    | GameOver
 
 
 type alias Level =
@@ -62,6 +70,7 @@ initialGame =
     , lines = 0
     , interval = 0
     , tileBag = bag1
+    , state = NewGame
     }
 
 
@@ -80,6 +89,17 @@ toCells tetromino =
 -- UPDATE
 
 
+type Msg
+    = StartGame
+
+
+update : Msg -> Game -> Game
+update msg game =
+    case msg of
+        StartGame ->
+            { game | state = Playing }
+
+
 level : Game -> Level
 level { lines } =
     (floor <| toFloat lines / 10) + 1
@@ -92,12 +112,20 @@ speedForLevel level =
 
 tickGame : Float -> List Input.Key -> Game -> Game
 tickGame delta keys game =
-    let
-        currentInterval =
-            game.interval + delta
-    in
-    processInput keys game
-        |> stepGame delta
+    case game.state of
+        NewGame ->
+            game
+
+        Playing ->
+            let
+                currentInterval =
+                    game.interval + delta
+            in
+            processInput keys game
+                |> stepGame delta
+
+        GameOver ->
+            game
 
 
 stepGame : Float -> Game -> Game
@@ -378,10 +406,11 @@ lowestPosition game tetromino =
 -- VIEW
 
 
-view : Game -> Html msg
+view : Game -> Html Msg
 view game =
     div [ id [ GameStyles.GameContainer ] ]
-        [ div []
+        [ overlayView game
+        , div []
             [ nextPieceView game
             , heldPieceView game
             , scoreView game
@@ -390,6 +419,19 @@ view game =
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
         ]
+
+
+overlayView : Game -> Html Msg
+overlayView game =
+    if game.state == NewGame then
+        div [ id [ GameStyles.Overlay ] ]
+            [ div [ class [ GameStyles.Title ] ] [ text "Welcome to Elm Tetris!" ]
+            , div [ class [ GameStyles.Actions ] ]
+                [ button [ onClick StartGame ] [ text "New Game" ]
+                ]
+            ]
+    else
+        div [] []
 
 
 levelView : Game -> Html msg
