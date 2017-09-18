@@ -22,6 +22,7 @@ type alias Game =
     , heldPiece : Maybe Shape
     , hasHeld : Bool
     , cells : List Cell
+    , score : Int
     , level : Level
     , interval : Float
     , tileBag : TileBag
@@ -58,6 +59,7 @@ initialGame =
     , hasHeld = False
     , cells = []
     , level = 1
+    , score = 0
     , interval = 0
     , tileBag = bag1
     }
@@ -336,8 +338,17 @@ view game =
         [ div []
             [ nextPieceView game
             , heldPieceView game
+            , scoreView game
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
+        ]
+
+
+scoreView : Game -> Html msg
+scoreView game =
+    div []
+        [ text "Score: "
+        , text <| toString game.score
         ]
 
 
