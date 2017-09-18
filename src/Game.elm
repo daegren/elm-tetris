@@ -218,6 +218,9 @@ processInput game tetromino =
 
                 Input.HardDrop ->
                     lowestPosition game c
+
+                Input.Hold ->
+                    c
         )
         tetromino
 

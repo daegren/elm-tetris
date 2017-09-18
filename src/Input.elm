@@ -5,6 +5,7 @@ type alias Input =
     { left : Bool
     , right : Bool
     , hardDrop : Bool
+    , hold : Bool
     , rotation : Maybe Rotation
     , debounces : List Debounce
     }
@@ -15,6 +16,7 @@ defaultInput =
     { left = False
     , right = False
     , hardDrop = False
+    , hold = False
     , rotation = Nothing
     , debounces = []
     }
@@ -51,6 +53,7 @@ type Key
     | RotateClockwise
     | RotateCounterClockwise
     | HardDrop
+    | Hold
 
 
 handleKeyDown : Input -> Key -> Input
@@ -87,6 +90,12 @@ handleKeyDown input key =
         HardDrop ->
             if not input.hardDrop then
                 { input | hardDrop = True, debounces = initialDebounce HardDrop :: input.debounces }
+            else
+                input
+
+        Hold ->
+            if not input.hold then
+                { input | hold = True, debounces = initialDebounce Hold :: input.debounces }
             else
                 input
 
@@ -138,6 +147,12 @@ handleKeyUp input key =
             else
                 input
 
+        Hold ->
+            if input.hold then
+                { input | hold = False, debounces = removeDebounce Hold input.debounces }
+            else
+                input
+
 
 tickDebounce : Float -> Input -> ( List Key, Input )
 tickDebounce diff input =
@@ -180,6 +195,9 @@ tickDebounce diff input =
                                         { d | current = d.current - interval, interval = Just 150 }
 
                                     HardDrop ->
+                                        { d | current = 0, interval = Nothing }
+
+                                    Hold ->
                                         { d | current = 0, interval = Nothing }
                             else
                                 d
