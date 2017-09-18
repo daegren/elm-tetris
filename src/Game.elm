@@ -20,6 +20,7 @@ type alias Game =
     { current : Tetromino
     , nextPiece : Shape
     , heldPiece : Maybe Shape
+    , hasHeld : Bool
     , cells : List Cell
     , level : Level
     , interval : Float
@@ -54,6 +55,7 @@ initialGame =
         Tetromino.init initialShape
     , nextPiece = nextShape
     , heldPiece = Nothing
+    , hasHeld = False
     , cells = []
     , level = 1
     , interval = 0
@@ -124,6 +126,7 @@ stepGame delta game =
                 | interval = interval
                 , current = Tetromino.init game.nextPiece
                 , cells = addCells game.current game.cells
+                , hasHeld = False
                 , nextPiece = next
                 , tileBag = bag
             }
@@ -218,19 +221,36 @@ processInput keys game =
                     { game | current = lowestPosition game game.current }
 
                 Input.Hold ->
-                    case game.heldPiece of
-                        Just piece ->
-                            { game | current = Tetromino.init piece, heldPiece = Just (Tetromino.shape game.current) }
-
-                        Nothing ->
-                            let
-                                ( nextPiece, bag ) =
-                                    TileBag.pull game.tileBag
-                            in
-                            { game | current = Tetromino.init nextPiece, heldPiece = Just (Tetromino.shape game.current) }
+                    if not game.hasHeld then
+                        swapHeld game
+                    else
+                        game
         )
         game
         keys
+
+
+swapHeld : Game -> Game
+swapHeld game =
+    let
+        newGame =
+            case game.heldPiece of
+                Just piece ->
+                    { game | current = Tetromino.init piece, heldPiece = Just (Tetromino.shape game.current) }
+
+                Nothing ->
+                    let
+                        ( nextPiece, bag ) =
+                            TileBag.pull game.tileBag
+                    in
+                    { game
+                        | current = Tetromino.init game.nextPiece
+                        , nextPiece = nextPiece
+                        , heldPiece = Just (Tetromino.shape game.current)
+                        , tileBag = bag
+                    }
+    in
+    { newGame | hasHeld = True }
 
 
 canRotate : Game -> Tetromino.Rotation -> Tetromino -> Bool
