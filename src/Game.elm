@@ -34,6 +34,7 @@ type alias Game =
 
 type State
     = NewGame
+    | Starting Int Float
     | Playing
     | GameOver
 
@@ -108,7 +109,7 @@ update msg game =
                 newGame =
                     initialGame int
             in
-            { newGame | state = Playing }
+            { newGame | state = Starting 3 0 }
 
 
 level : Game -> Level
@@ -134,6 +135,15 @@ tickGame delta keys game =
             in
             processInput keys game
                 |> stepGame delta
+
+        Starting count interval ->
+            if interval + delta > 1000 then
+                if count == 0 then
+                    { game | state = Playing }
+                else
+                    { game | state = Starting (count - 1) (interval + delta - 1000) }
+            else
+                { game | state = Starting count (interval + delta) }
 
         GameOver ->
             game
@@ -453,6 +463,9 @@ overlayView game =
 
         GameOver ->
             overlay "Game Over!" [ "Score: " ++ toString game.score ] [ ( "New Game", StartGame ) ]
+
+        Starting count _ ->
+            overlay "Ready?" [ "Starting in: " ++ toString count ] []
 
         Playing ->
             div [] []
