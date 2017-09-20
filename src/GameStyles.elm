@@ -48,14 +48,18 @@ css =
                 [ class Title
                     [ fontSize (em 3)
                     , padding2 (em 1.5) zero
+                    , flex (num 1)
                     ]
                 , class Actions
-                    [ children
+                    [ flex (num 1)
+                    , children
                         [ button [ fontSize (em 1.5) ]
                         ]
                     ]
                 , class Details
-                    [ fontSize (em 1.5) ]
+                    [ flex (num 1)
+                    , fontSize (em 1.5)
+                    ]
                 ]
             ]
         ]

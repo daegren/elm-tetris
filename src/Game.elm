@@ -438,19 +438,21 @@ view game =
 overlayView : Game -> Html Msg
 overlayView game =
     let
-        overlay title actions =
+        overlay title info actions =
             div [ id [ GameStyles.Overlay ] ]
                 [ div [ class [ GameStyles.Title ] ] [ text title ]
+                , div [ class [ GameStyles.Details ] ]
+                    (List.map (\txt -> div [] [ text txt ]) info)
                 , div [ class [ GameStyles.Actions ] ]
                     (List.map (\( txt, msg ) -> button [ onClick msg ] [ text txt ]) actions)
                 ]
     in
     case game.state of
         NewGame ->
-            overlay "Welcome to Elm Tetris!" [ ( "New Game", StartGame ) ]
+            overlay "Welcome to Elm Tetris!" [] [ ( "New Game", StartGame ) ]
 
         GameOver ->
-            overlay "Game Over!" [ ( "New Game", StartGame ) ]
+            overlay "Game Over!" [ "Score: " ++ toString game.score ] [ ( "New Game", StartGame ) ]
 
         Playing ->
             div [] []
