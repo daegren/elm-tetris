@@ -58,7 +58,15 @@ initialModel { randomSeed } =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ AnimationFrame.diffs Tick
+        [ case model.game.state of
+            Game.Playing ->
+                AnimationFrame.diffs Tick
+
+            Game.Starting _ _ ->
+                AnimationFrame.diffs Tick
+
+            _ ->
+                Sub.none
         , Keyboard.downs KeyDown
         , Keyboard.ups KeyUp
         ]
