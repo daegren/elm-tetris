@@ -30,6 +30,8 @@ css =
             , backgroundColor (rgb 128 128 128)
             , padding (px 16)
             , position relative
+            , maxWidth (px 960)
+            , margin2 zero auto
             ]
         , id PlayField
             [ padding (px 16) ]
@@ -39,7 +41,7 @@ css =
             , right zero
             , left zero
             , bottom zero
-            , backgroundColor (rgba 255 255 255 0.75)
+            , backgroundColor (rgba 255 255 255 0.8)
             , zIndex (int 1)
             , displayFlex
             , alignItems center
@@ -53,7 +55,10 @@ css =
                 , class Actions
                     [ flex (num 1)
                     , children
-                        [ button [ fontSize (em 1.5) ]
+                        [ button
+                            [ fontSize (em 1.5)
+                            , borderRadius (em 0.5)
+                            ]
                         ]
                     ]
                 , class Details
