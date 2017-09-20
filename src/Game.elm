@@ -28,6 +28,7 @@ type alias Game =
     , interval : Float
     , tileBag : TileBag
     , state : State
+    , seed : Random.Seed
     }
 
 
@@ -47,12 +48,14 @@ type alias Cell =
     }
 
 
-initialGame : Game
-initialGame =
+initialGame : Int -> Game
+initialGame randomSeed =
     let
-        -- TODO: generate initialSeed from JS and pass through flags
+        seed =
+            Random.initialSeed randomSeed
+
         bag =
-            TileBag.init (Random.initialSeed 1234)
+            TileBag.init seed
 
         ( initialShape, bag0 ) =
             TileBag.pull bag
@@ -71,6 +74,7 @@ initialGame =
     , interval = 0
     , tileBag = bag1
     , state = NewGame
+    , seed = seed
     }
 
 
@@ -97,7 +101,14 @@ update : Msg -> Game -> Game
 update msg game =
     case msg of
         StartGame ->
-            { initialGame | state = Playing }
+            let
+                ( int, seed ) =
+                    Random.step (Random.int 0 Random.maxInt) game.seed
+
+                newGame =
+                    initialGame int
+            in
+            { newGame | state = Playing }
 
 
 level : Game -> Level

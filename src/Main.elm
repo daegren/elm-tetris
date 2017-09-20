@@ -13,9 +13,13 @@ import Time
 -- PROGRAM
 
 
-main : Program Never Model Msg
+type alias Flags =
+    { randomSeed : Int }
+
+
+main : Program Flags Model Msg
 main =
-    program
+    programWithFlags
         { init = init
         , update = update
         , subscriptions = subscriptions
@@ -23,9 +27,9 @@ main =
         }
 
 
-init : ( Model, Cmd msg )
-init =
-    ( initialModel
+init : Flags -> ( Model, Cmd msg )
+init flags =
+    ( initialModel flags
     , Cmd.none
     )
 
@@ -40,9 +44,9 @@ type alias Model =
     }
 
 
-initialModel : Model
-initialModel =
-    { game = Game.initialGame
+initialModel : Flags -> Model
+initialModel { randomSeed } =
+    { game = Game.initialGame randomSeed
     , input = Input.defaultInput
     }
 
