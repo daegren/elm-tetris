@@ -13,9 +13,13 @@ import Time
 -- PROGRAM
 
 
-main : Program Never Model Msg
+type alias Flags =
+    { randomSeed : Int }
+
+
+main : Program Flags Model Msg
 main =
-    program
+    programWithFlags
         { init = init
         , update = update
         , subscriptions = subscriptions
@@ -23,9 +27,9 @@ main =
         }
 
 
-init : ( Model, Cmd msg )
-init =
-    ( initialModel
+init : Flags -> ( Model, Cmd msg )
+init flags =
+    ( initialModel flags
     , Cmd.none
     )
 
@@ -40,9 +44,9 @@ type alias Model =
     }
 
 
-initialModel : Model
-initialModel =
-    { game = Game.initialGame
+initialModel : Flags -> Model
+initialModel { randomSeed } =
+    { game = Game.initialGame randomSeed
     , input = Input.defaultInput
     }
 
@@ -54,7 +58,15 @@ initialModel =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ AnimationFrame.diffs Tick
+        [ case model.game.state of
+            Game.Playing ->
+                AnimationFrame.diffs Tick
+
+            Game.Starting _ _ ->
+                AnimationFrame.diffs Tick
+
+            _ ->
+                Sub.none
         , Keyboard.downs KeyDown
         , Keyboard.ups KeyUp
         ]
@@ -69,6 +81,7 @@ type Msg
     | Tick Time.Time
     | KeyDown Keyboard.KeyCode
     | KeyUp Keyboard.KeyCode
+    | GameMsg Game.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -107,6 +120,9 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        GameMsg subMsg ->
+            ( { model | game = Game.update subMsg model.game }, Cmd.none )
 
 
 mapKey : Keyboard.KeyCode -> Maybe Input.Key
@@ -159,4 +175,4 @@ mapKey keyCode =
 view : Model -> Html Msg
 view model =
     div []
-        [ Game.view model.game ]
+        [ Html.map GameMsg <| Game.view model.game ]

@@ -4,8 +4,9 @@ import Collage
 import Color
 import Element
 import GameStyles
-import Html exposing (Html, div, text)
+import Html exposing (Html, button, div, text)
 import Html.CssHelpers
+import Html.Events exposing (onClick)
 import Input
 import Point exposing (Point)
 import Random
@@ -26,7 +27,16 @@ type alias Game =
     , lines : Int
     , interval : Float
     , tileBag : TileBag
+    , state : State
+    , seed : Random.Seed
     }
+
+
+type State
+    = NewGame
+    | Starting Int Float
+    | Playing
+    | GameOver
 
 
 type alias Level =
@@ -39,12 +49,14 @@ type alias Cell =
     }
 
 
-initialGame : Game
-initialGame =
+initialGame : Int -> Game
+initialGame randomSeed =
     let
-        -- TODO: generate initialSeed from JS and pass through flags
+        seed =
+            Random.initialSeed randomSeed
+
         bag =
-            TileBag.init (Random.initialSeed 1234)
+            TileBag.init seed
 
         ( initialShape, bag0 ) =
             TileBag.pull bag
@@ -62,6 +74,8 @@ initialGame =
     , lines = 0
     , interval = 0
     , tileBag = bag1
+    , state = NewGame
+    , seed = seed
     }
 
 
@@ -80,6 +94,24 @@ toCells tetromino =
 -- UPDATE
 
 
+type Msg
+    = StartGame
+
+
+update : Msg -> Game -> Game
+update msg game =
+    case msg of
+        StartGame ->
+            let
+                ( int, seed ) =
+                    Random.step (Random.int 0 Random.maxInt) game.seed
+
+                newGame =
+                    initialGame int
+            in
+            { newGame | state = Starting 3 0 }
+
+
 level : Game -> Level
 level { lines } =
     (floor <| toFloat lines / 10) + 1
@@ -92,12 +124,29 @@ speedForLevel level =
 
 tickGame : Float -> List Input.Key -> Game -> Game
 tickGame delta keys game =
-    let
-        currentInterval =
-            game.interval + delta
-    in
-    processInput keys game
-        |> stepGame delta
+    case game.state of
+        NewGame ->
+            game
+
+        Playing ->
+            let
+                currentInterval =
+                    game.interval + delta
+            in
+            processInput keys game
+                |> stepGame delta
+
+        Starting count interval ->
+            if interval + delta > 1000 then
+                if count == 0 then
+                    { game | state = Playing }
+                else
+                    { game | state = Starting (count - 1) (interval + delta - 1000) }
+            else
+                { game | state = Starting count (interval + delta) }
+
+        GameOver ->
+            game
 
 
 stepGame : Float -> Game -> Game
@@ -125,38 +174,41 @@ stepGame delta game =
             }
 
         Nothing ->
-            let
-                ( next, bag ) =
-                    TileBag.pull game.tileBag
+            if Tetromino.isAtSpawn game.current then
+                { game | state = GameOver }
+            else
+                let
+                    ( next, bag ) =
+                        TileBag.pull game.tileBag
 
-                cells =
-                    addCells game.current game.cells
+                    cells =
+                        addCells game.current game.cells
 
-                lines =
-                    fullRows -10 cells
+                    lines =
+                        fullRows -10 cells
 
-                score =
-                    if lines == 1 then
-                        100 * level game
-                    else if lines == 2 then
-                        300 * level game
-                    else if lines == 3 then
-                        500 * level game
-                    else if lines == 4 then
-                        800 * level game
-                    else
-                        0
-            in
-            { game
-                | interval = interval
-                , current = Tetromino.init game.nextPiece
-                , cells = checkCells -10 cells
-                , hasHeld = False
-                , score = game.score + score
-                , lines = game.lines + lines
-                , nextPiece = next
-                , tileBag = bag
-            }
+                    score =
+                        if lines == 1 then
+                            100 * level game
+                        else if lines == 2 then
+                            300 * level game
+                        else if lines == 3 then
+                            500 * level game
+                        else if lines == 4 then
+                            800 * level game
+                        else
+                            0
+                in
+                { game
+                    | interval = interval
+                    , current = Tetromino.init game.nextPiece
+                    , cells = checkCells -10 cells
+                    , hasHeld = False
+                    , score = game.score + score
+                    , lines = game.lines + lines
+                    , nextPiece = next
+                    , tileBag = bag
+                }
 
 
 addCells : Tetromino -> List Cell -> List Cell
@@ -378,10 +430,11 @@ lowestPosition game tetromino =
 -- VIEW
 
 
-view : Game -> Html msg
+view : Game -> Html Msg
 view game =
     div [ id [ GameStyles.GameContainer ] ]
-        [ div []
+        [ overlayView game
+        , div []
             [ nextPieceView game
             , heldPieceView game
             , scoreView game
@@ -390,6 +443,32 @@ view game =
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
         ]
+
+
+overlayView : Game -> Html Msg
+overlayView game =
+    let
+        overlay title info actions =
+            div [ id [ GameStyles.Overlay ] ]
+                [ div [ class [ GameStyles.Title ] ] [ text title ]
+                , div [ class [ GameStyles.Details ] ]
+                    (List.map (\txt -> div [] [ text txt ]) info)
+                , div [ class [ GameStyles.Actions ] ]
+                    (List.map (\( txt, msg ) -> button [ onClick msg ] [ text txt ]) actions)
+                ]
+    in
+    case game.state of
+        NewGame ->
+            overlay "Welcome to Elm Tetris!" [] [ ( "New Game", StartGame ) ]
+
+        GameOver ->
+            overlay "Game Over!" [ "Score: " ++ toString game.score, "Level: " ++ toString (level game) ] [ ( "New Game", StartGame ) ]
+
+        Starting count _ ->
+            overlay "Ready?" [ "Starting in: " ++ toString count ] []
+
+        Playing ->
+            div [] []
 
 
 levelView : Game -> Html msg
