@@ -462,7 +462,7 @@ overlayView game =
             overlay "Welcome to Elm Tetris!" [] [ ( "New Game", StartGame ) ]
 
         GameOver ->
-            overlay "Game Over!" [ "Score: " ++ toString game.score ] [ ( "New Game", StartGame ) ]
+            overlay "Game Over!" [ "Score: " ++ toString game.score, "Level: " ++ toString (level game) ] [ ( "New Game", StartGame ) ]
 
         Starting count _ ->
             overlay "Ready?" [ "Starting in: " ++ toString count ] []
