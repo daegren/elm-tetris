@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "elm test",
+    "build": "webpack --config webpack.config.prod.js",
     "start": "webpack-dev-server"
   },
   "author": "",
