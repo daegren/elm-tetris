@@ -4,7 +4,7 @@ import Collage
 import Color
 import Element
 import GameStyles
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, h2, text)
 import Html.CssHelpers
 import Html.Events exposing (onClick)
 import Input
@@ -452,6 +452,7 @@ view game =
             , scoreView game
             , lineView game
             , levelView game
+            , helpView
             ]
         , div [ id [ GameStyles.PlayField ] ] [ playField game ]
         ]
@@ -484,6 +485,17 @@ overlayView game =
 
         Playing ->
             div [] []
+
+
+helpView : Html msg
+helpView =
+    div []
+        [ h2 [] [ text "Help" ]
+        , div [] [ text "← and → to move the tetromino left and right" ]
+        , div [] [ text "space to hard drop the tetromino" ]
+        , div [] [ text "x and c to rotate to tetromino" ]
+        , div [] [ text "p to pause" ]
+        ]
 
 
 levelView : Game -> Html msg
