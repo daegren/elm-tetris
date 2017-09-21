@@ -36,6 +36,7 @@ type State
     = NewGame
     | Starting Int Float
     | Playing
+    | Paused
     | GameOver
 
 
@@ -135,6 +136,9 @@ tickGame delta keys game =
             in
             processInput keys game
                 |> stepGame delta
+
+        Paused ->
+            processInput keys game
 
         Starting count interval ->
             if interval + delta > 1000 then
@@ -325,6 +329,14 @@ processInput keys game =
                         swapHeld game
                     else
                         game
+
+                Input.Pause ->
+                    if game.state == Playing then
+                        { game | state = Paused }
+                    else if game.state == Paused then
+                        { game | state = Starting 3 0 }
+                    else
+                        game
         )
         game
         keys
@@ -466,6 +478,9 @@ overlayView game =
 
         Starting count _ ->
             overlay "Ready?" [ "Starting in: " ++ toString count ] []
+
+        Paused ->
+            overlay "Paused" [ "Press p to unpause" ] []
 
         Playing ->
             div [] []
