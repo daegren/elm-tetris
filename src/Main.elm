@@ -65,6 +65,9 @@ subscriptions model =
             Game.Starting _ _ ->
                 AnimationFrame.diffs Tick
 
+            Game.Paused ->
+                AnimationFrame.diffs Tick
+
             _ ->
                 Sub.none
         , Keyboard.downs KeyDown
@@ -151,6 +154,10 @@ mapKey keyCode =
         -- z
         90 ->
             Just Input.Hold
+
+        -- p
+        80 ->
+            Just Input.Pause
 
         _ ->
             let
